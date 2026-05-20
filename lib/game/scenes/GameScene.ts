@@ -68,6 +68,8 @@ export default class GameScene extends Phaser.Scene {
   private keeperOffset = 0
   private keeperDiveDir: Zone = 'centre'
   private keeperDiveHeight: Height = 'bottom'
+  private keeperPredX = 0.5
+  private keeperPredY = 0.75
   private keeperPose: CharacterPose = POSES.keeperIdle(0)
 
   // Player
@@ -238,6 +240,8 @@ export default class GameScene extends Phaser.Scene {
     const prediction = this.ai.predictShot()
     this.keeperDiveDir = prediction.zone
     this.keeperDiveHeight = prediction.height
+    this.keeperPredX = prediction.x
+    this.keeperPredY = prediction.y
     this.ai.recordShot(this.lockedShotX, this.lockedShotY, this.lockedPower)
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
@@ -278,22 +282,26 @@ export default class GameScene extends Phaser.Scene {
 
     if (!inX || !inY) return false
 
-    const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
-    const keeperZoneX: Record<Zone, number> = {
-      left:   this.GOAL_LEFT + zoneWidth * 0.5,
-      centre: this.GOAL_LEFT + zoneWidth * 1.5,
-      right:  this.GOAL_LEFT + zoneWidth * 2.5,
-    }
-    const keeperReach = zoneWidth * 0.7
-    const diveX = keeperZoneX[this.keeperDiveDir]
-    const dx = Math.abs(diveX - this.ballTargetX)
+    const goalW = this.GOAL_RIGHT - this.GOAL_LEFT
+    const goalH = this.GOAL_Y_BOTTOM - this.GOAL_Y_TOP
 
-    if (dx < keeperReach) {
-      const c = this.ai.getConfidence()
-      if (this.keeperDiveHeight === this.lockedHeight && Math.random() < 0.65 + c * 0.25) {
-        return false
-      }
-      if (Math.random() < 0.45 + c * 0.20) return false
+    // Convert predicted keeper position (normalized) to screen coords
+    const keeperScreenX = this.GOAL_LEFT + this.keeperPredX * goalW
+    const keeperScreenY = this.GOAL_Y_TOP  + this.keeperPredY * goalH
+
+    // Normalized distance between keeper prediction and ball target
+    const dx = Math.abs(keeperScreenX - this.ballTargetX) / goalW
+    const dy = Math.abs(keeperScreenY - this.ballTargetY) / goalH
+
+    const c = this.ai.getConfidence()
+    // Keeper reach: 18% of goal width horizontally, 30% vertically
+    const reachX = 0.18 + c * 0.06
+    const reachY = 0.30 + c * 0.08
+
+    if (dx < reachX && dy < reachY) {
+      // Inside reach — probability of save scales with how centered the prediction is
+      const centeredness = 1 - Math.sqrt((dx / reachX) ** 2 + (dy / reachY) ** 2) * 0.5
+      if (Math.random() < 0.60 * centeredness + c * 0.20) return false
     }
 
     return true
@@ -359,6 +367,8 @@ export default class GameScene extends Phaser.Scene {
     this.power = 0
     this.keeperOffset = 0
     this.keeperDiveHeight = 'bottom'
+    this.keeperPredX = 0.5
+    this.keeperPredY = 0.75
     this.playerPose = POSES.idle()
     this.keeperPose = POSES.keeperIdle(0)
     this.phase = 'player_idle'
@@ -440,18 +450,31 @@ export default class GameScene extends Phaser.Scene {
       this.ballY = this.ballStartY + (this.ballTargetY - this.ballStartY) * t - arc
       this.ballRotation += 0.18
 
-      const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
+      const goalW = this.GOAL_RIGHT - this.GOAL_LEFT
       const p = Math.min(this.ballT * 3, 1)
+      const safeX = isFinite(this.keeperPredX) ? this.keeperPredX : 0.5
+      const safeY = isFinite(this.keeperPredY) ? this.keeperPredY : 0.75
+      // Direction always matches keeperDiveDir; magnitude from predicted x within zone
+      const dirSign = this.keeperDiveDir === 'right' ? 1 : this.keeperDiveDir === 'left' ? -1 : 0
+      const magnitude = Math.min(Math.abs((safeX - 0.5) * goalW), goalW / 3)
+      const targetOffset = dirSign * (dirSign === 0 ? 0 : Math.max(goalW / 6, magnitude))
+      const vertUp = safeY < 0.5
       if (this.keeperDiveDir === 'left') {
         const pose = POSES.diveRight(this.ballT * 30)
-        pose.offsetY = this.keeperDiveHeight === 'top' ? -p * H * 0.25 : p * 15
+        pose.offsetY = vertUp ? -p * H * 0.25 : p * 15
         this.keeperPose = pose
-        this.keeperOffset = -zoneWidth * p
+        this.keeperOffset = targetOffset * p
       } else if (this.keeperDiveDir === 'right') {
         const pose = POSES.diveLeft(this.ballT * 30)
-        pose.offsetY = this.keeperDiveHeight === 'top' ? -p * H * 0.25 : p * 15
+        pose.offsetY = vertUp ? -p * H * 0.25 : p * 15
         this.keeperPose = pose
-        this.keeperOffset = zoneWidth * p
+        this.keeperOffset = targetOffset * p
+      } else {
+        // centre — small dive toward exact predicted position
+        const pose = POSES.keeperIdle(this.ballT * 10)
+        pose.offsetY = vertUp ? -p * H * 0.12 : p * 8
+        this.keeperPose = pose
+        this.keeperOffset = targetOffset * p
       }
 
       if (t >= 1) {

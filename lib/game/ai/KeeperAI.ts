@@ -23,7 +23,7 @@ export class KeeperAI {
   private history: ShotRecord[] = []
   private readonly DECAY = 0.85
   private readonly STORAGE_KEY = 'pblitz-keeper-history'
-  private readonly MAX_PERSISTENT = 25
+  private readonly MAX_PERSISTENT = 8
   private resultBoosts: Partial<Record<ShotType, number>> = {}
   private populationClusters: { x: number; y: number; weight: number }[] = []
   private populationTransitions: Partial<Record<ShotType, Partial<Record<ShotType, number>>>> = {}
@@ -67,7 +67,10 @@ export class KeeperAI {
       const res = await fetch('/api/patterns')
       if (!res.ok) return
       const data = await res.json()
-      this.populationClusters = data.clusters ?? []
+      this.populationClusters = (data.clusters ?? []).filter(
+        (c: { x: unknown; y: unknown; weight: unknown }) =>
+          isFinite(c.x as number) && isFinite(c.y as number) && isFinite(c.weight as number)
+      )
       this.populationTransitions = data.transitions ?? {}
       this.populationTotal = data.totalShots ?? 0
     } catch {}
@@ -103,8 +106,8 @@ export class KeeperAI {
     const counts = Object.fromEntries(SHOT_TYPES.map(t => [t, 1])) as Record<ShotType, number>
 
     // Population KDE: each coordinate cluster contributes kernel-weighted mass
-    // Scale: population counts as ~30 virtual shots regardless of database size
-    const popScale = this.populationTotal > 0 ? 30 / this.populationTotal : 0
+    // Scale: population counts as ~8 virtual shots so player history can override quickly
+    const popScale = this.populationTotal > 0 ? 8 / this.populationTotal : 0
     for (const { x, y, weight } of this.populationClusters) {
       for (const t of SHOT_TYPES) {
         counts[t] += weight * popScale * shotKernel(x, y, t)
@@ -155,7 +158,33 @@ export class KeeperAI {
     return Object.fromEntries(SHOT_TYPES.map(t => [t, (counts[t] / total) * 100])) as Record<ShotType, number>
   }
 
-  predictShot(): { zone: Zone; height: Height } {
+  private predictCoordinate(chosenType: ShotType): { x: number; y: number } {
+    let wx = 0, wy = 0, w = 0
+    const popScale = this.populationTotal > 0 ? 30 / this.populationTotal : 0
+    for (const cluster of this.populationClusters) {
+      const kw = shotKernel(cluster.x, cluster.y, chosenType) * cluster.weight * popScale
+      wx += cluster.x * kw
+      wy += cluster.y * kw
+      w += kw
+    }
+    const n = this.history.length
+    for (let i = 0; i < n; i++) {
+      const { x, y } = this.history[i]
+      const recency = Math.pow(this.DECAY, n - 1 - i)
+      const kw = recency * shotKernel(x, y, chosenType)
+      wx += x * kw
+      wy += y * kw
+      w += kw
+    }
+    const [zone, height] = chosenType.split('-') as [Zone, Height]
+    const fallback = { x: ZONE_X[zone], y: HEIGHT_Y[height] }
+    if (!(w > 0)) return fallback
+    const rx = wx / w, ry = wy / w
+    if (!isFinite(rx) || !isFinite(ry)) return fallback
+    return { x: Math.max(0, Math.min(1, rx)), y: Math.max(0, Math.min(1, ry)) }
+  }
+
+  predictShot(): { zone: Zone; height: Height; x: number; y: number } {
     const freq = this.getJointWeights()
     const markov = this.getMarkovWeights()
     const blend = markov ? Math.min(0.45, this.history.length * 0.1) : 0
@@ -171,12 +200,14 @@ export class KeeperAI {
       cumulative += weights[t]
       if (roll < cumulative) {
         const [zone, height] = t.split('-') as [Zone, Height]
-        return { zone, height }
+        const { x, y } = this.predictCoordinate(t)
+        return { zone, height, x, y }
       }
     }
     const best = SHOT_TYPES.reduce((a, b) => weights[a] > weights[b] ? a : b)
     const [zone, height] = best.split('-') as [Zone, Height]
-    return { zone, height }
+    const { x, y } = this.predictCoordinate(best)
+    return { zone, height, x, y }
   }
 
   getConfidence(): number {
