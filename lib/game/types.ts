@@ -2,10 +2,19 @@ export type Zone = 'left' | 'centre' | 'right'
 export type Height = 'top' | 'bottom'
 
 export interface ShotRecord {
-  zone: Zone
-  height: Height
-  round: number
+  x: number     // normalized 0–1 within goal width (left → right)
+  y: number     // normalized 0–1 within goal height (top → bottom)
   power: number
+}
+
+export function coordToZone(x: number): Zone {
+  if (x < 1 / 3) return 'left'
+  if (x < 2 / 3) return 'centre'
+  return 'right'
+}
+
+export function coordToHeight(y: number): Height {
+  return y < 0.5 ? 'top' : 'bottom'
 }
 
 export interface Kit {

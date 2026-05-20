@@ -1,25 +1,127 @@
-import { Zone, Height, ShotRecord } from '../types'
+import { Zone, Height, ShotRecord, coordToZone, coordToHeight } from '../types'
 
 type ShotType = `${Zone}-${Height}`
 const ZONES: Zone[] = ['left', 'centre', 'right']
 const HEIGHTS: Height[] = ['top', 'bottom']
 const SHOT_TYPES: ShotType[] = ZONES.flatMap(z => HEIGHTS.map(h => `${z}-${h}` as ShotType))
 
+// Canonical center of each zone in normalized goal coordinates
+const ZONE_X: Record<Zone, number>   = { left: 1 / 6, centre: 1 / 2, right: 5 / 6 }
+const HEIGHT_Y: Record<Height, number> = { top: 1 / 4, bottom: 3 / 4 }
+const BW_X = 0.20   // horizontal kernel bandwidth (20% of goal width)
+const BW_Y = 0.25   // vertical kernel bandwidth   (25% of goal height)
+
+// Gaussian kernel: how strongly does a shot at (sx, sy) activate a given zone?
+function shotKernel(sx: number, sy: number, type: ShotType): number {
+  const [zone, height] = type.split('-') as [Zone, Height]
+  const dx = (sx - ZONE_X[zone])   / BW_X
+  const dy = (sy - HEIGHT_Y[height]) / BW_Y
+  return Math.exp(-(dx * dx + dy * dy) / 2)
+}
+
 export class KeeperAI {
   private history: ShotRecord[] = []
   private readonly DECAY = 0.85
+  private readonly STORAGE_KEY = 'pblitz-keeper-history'
+  private readonly MAX_PERSISTENT = 25
+  private resultBoosts: Partial<Record<ShotType, number>> = {}
+  private populationClusters: { x: number; y: number; weight: number }[] = []
+  private populationTransitions: Partial<Record<ShotType, Partial<Record<ShotType, number>>>> = {}
+  private populationTotal = 0
+  readonly playerId: string
 
-  recordShot(zone: Zone, height: Height, round: number, power: number): void {
-    this.history.push({ zone, height, round, power })
+  constructor() {
+    this.playerId = this.getOrCreatePlayerId()
+    this.loadPersistent()
+    this.fetchPopulationPrior()
+  }
+
+  private getOrCreatePlayerId(): string {
+    try {
+      let id = localStorage.getItem('pblitz-player-id')
+      if (!id) {
+        id = crypto.randomUUID()
+        localStorage.setItem('pblitz-player-id', id)
+      }
+      return id
+    } catch {
+      return 'anonymous'
+    }
+  }
+
+  private loadPersistent(): void {
+    try {
+      const raw = localStorage.getItem(this.STORAGE_KEY)
+      if (raw) this.history = (JSON.parse(raw) as ShotRecord[]).slice(-this.MAX_PERSISTENT)
+    } catch {}
+  }
+
+  private savePersistent(): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.history.slice(-this.MAX_PERSISTENT)))
+    } catch {}
+  }
+
+  async fetchPopulationPrior(): Promise<void> {
+    try {
+      const res = await fetch('/api/patterns')
+      if (!res.ok) return
+      const data = await res.json()
+      this.populationClusters = data.clusters ?? []
+      this.populationTransitions = data.transitions ?? {}
+      this.populationTotal = data.totalShots ?? 0
+    } catch {}
+  }
+
+  recordShot(x: number, y: number, power: number): void {
+    this.history.push({ x, y, power })
+    this.savePersistent()
+  }
+
+  syncShot(scored: boolean, x: number, y: number, power: number, prevX?: number, prevY?: number): void {
+    fetch('/api/shots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_id: this.playerId,
+        x, y, power, scored,
+        prev_x: prevX ?? null,
+        prev_y: prevY ?? null,
+      }),
+    }).catch(() => {})
+  }
+
+  // Which zone does this coordinate most strongly belong to?
+  private dominantType(x: number, y: number): ShotType {
+    return SHOT_TYPES.reduce((best, t) =>
+      shotKernel(x, y, t) > shotKernel(x, y, best) ? t : best
+    , SHOT_TYPES[0])
   }
 
   private getJointWeights(): Record<ShotType, number> {
+    // Laplace prior (uniform baseline)
     const counts = Object.fromEntries(SHOT_TYPES.map(t => [t, 1])) as Record<ShotType, number>
+
+    // Population KDE: each coordinate cluster contributes kernel-weighted mass
+    // Scale: population counts as ~30 virtual shots regardless of database size
+    const popScale = this.populationTotal > 0 ? 30 / this.populationTotal : 0
+    for (const { x, y, weight } of this.populationClusters) {
+      for (const t of SHOT_TYPES) {
+        counts[t] += weight * popScale * shotKernel(x, y, t)
+      }
+    }
+
+    // Player's own history with exponential recency decay
     const n = this.history.length
     for (let i = 0; i < n; i++) {
-      const { zone, height } = this.history[i]
-      counts[`${zone}-${height}`] += Math.pow(this.DECAY, n - 1 - i)
+      const { x, y } = this.history[i]
+      const recency = Math.pow(this.DECAY, n - 1 - i)
+      for (const t of SHOT_TYPES) {
+        const boost = 1 + 0.5 * (this.resultBoosts[t] ?? 0)
+        counts[t] += recency * shotKernel(x, y, t) * boost
+      }
     }
+
     const total = SHOT_TYPES.reduce((s, t) => s + counts[t], 0)
     return Object.fromEntries(SHOT_TYPES.map(t => [t, (counts[t] / total) * 100])) as Record<ShotType, number>
   }
@@ -27,19 +129,27 @@ export class KeeperAI {
   private getMarkovWeights(): Record<ShotType, number> | null {
     const n = this.history.length
     if (n < 2) return null
-    const lastType: ShotType = `${this.history[n - 1].zone}-${this.history[n - 1].height}`
+    const last = this.history[n - 1]
+    const lastType = this.dominantType(last.x, last.y)
 
     let realTransitions = 0
     const counts = Object.fromEntries(SHOT_TYPES.map(t => [t, 0.5])) as Record<ShotType, number>
+
     for (let i = 0; i < n - 1; i++) {
-      const from: ShotType = `${this.history[i].zone}-${this.history[i].height}`
+      const from = this.dominantType(this.history[i].x, this.history[i].y)
       if (from === lastType) {
-        const to: ShotType = `${this.history[i + 1].zone}-${this.history[i + 1].height}`
+        const to = this.dominantType(this.history[i + 1].x, this.history[i + 1].y)
         counts[to] += Math.pow(this.DECAY, n - 2 - i)
         realTransitions++
       }
     }
-    if (realTransitions === 0) return null
+
+    const globalFrom = this.populationTransitions[lastType]
+    if (globalFrom) {
+      for (const t of SHOT_TYPES) counts[t] += (globalFrom[t] ?? 0) * 0.005
+    }
+
+    if (realTransitions === 0 && !globalFrom) return null
 
     const total = SHOT_TYPES.reduce((s, t) => s + counts[t], 0)
     return Object.fromEntries(SHOT_TYPES.map(t => [t, (counts[t] / total) * 100])) as Record<ShotType, number>
@@ -50,11 +160,11 @@ export class KeeperAI {
     const markov = this.getMarkovWeights()
     const blend = markov ? Math.min(0.45, this.history.length * 0.1) : 0
 
-    const total = SHOT_TYPES.reduce((s, t) => s + freq[t], 0)
     const weights = Object.fromEntries(
       SHOT_TYPES.map(t => [t, (1 - blend) * freq[t] + blend * (markov?.[t] ?? freq[t])])
     ) as Record<ShotType, number>
 
+    const total = SHOT_TYPES.reduce((s, t) => s + weights[t], 0)
     const roll = Math.random() * total
     let cumulative = 0
     for (const t of SHOT_TYPES) {
@@ -69,6 +179,31 @@ export class KeeperAI {
     return { zone, height }
   }
 
+  getConfidence(): number {
+    const weights = this.getJointWeights()
+    const maxEntropy = Math.log(SHOT_TYPES.length)
+    let entropy = 0
+    for (const t of SHOT_TYPES) {
+      const p = weights[t] / 100
+      if (p > 0) entropy -= p * Math.log(p)
+    }
+    return 1 - entropy / maxEntropy
+  }
+
+  updateResult(scored: boolean, keeperZone: Zone, keeperHeight: Height, x: number, y: number): void {
+    if (!scored) return
+    const shotZone = coordToZone(x)
+    const shotHeight = coordToHeight(y)
+    if (keeperZone === shotZone && keeperHeight === shotHeight) {
+      const type: ShotType = `${shotZone}-${shotHeight}`
+      this.resultBoosts[type] = (this.resultBoosts[type] ?? 0) + 1
+    }
+  }
+
+  getPrevShot(): ShotRecord | undefined {
+    return this.history[this.history.length - 2]
+  }
+
   getWeights(): Record<Zone, number> {
     const j = this.getJointWeights()
     return {
@@ -78,11 +213,6 @@ export class KeeperAI {
     }
   }
 
-  reset(): void {
-    this.history = []
-  }
-
-  getShotCount(): number {
-    return this.history.length
-  }
+  reset(): void { this.history = [] }
+  getShotCount(): number { return this.history.length }
 }

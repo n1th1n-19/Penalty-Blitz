@@ -51,6 +51,8 @@ export default class GameScene extends Phaser.Scene {
   private powerSpeed = 1.8
   private lockedPower = 0
   private lockedHeight: Height = 'bottom'
+  private lockedShotX = 0.5
+  private lockedShotY = 0.75
 
   // Ball
   private ballX = 0
@@ -218,6 +220,12 @@ export default class GameScene extends Phaser.Scene {
 
     this.lockedHeight = this.aimY < (this.GOAL_Y_TOP + this.GOAL_Y_BOTTOM) / 2 ? 'top' : 'bottom'
 
+    // Exact normalized coordinates within the goal frame
+    const goalW = this.GOAL_RIGHT - this.GOAL_LEFT
+    const goalH = this.GOAL_Y_BOTTOM - this.GOAL_Y_TOP
+    this.lockedShotX = Math.max(0, Math.min(1, (this.aimX - this.GOAL_LEFT) / goalW))
+    this.lockedShotY = Math.max(0, Math.min(1, (this.aimY - this.GOAL_Y_TOP) / goalH))
+
     this.phase = 'power'
     this.power = 0
     this.powerDir = 1
@@ -230,7 +238,7 @@ export default class GameScene extends Phaser.Scene {
     const prediction = this.ai.predictShot()
     this.keeperDiveDir = prediction.zone
     this.keeperDiveHeight = prediction.height
-    this.ai.recordShot(this.lockedZone, this.lockedHeight, this.round, this.lockedPower)
+    this.ai.recordShot(this.lockedShotX, this.lockedShotY, this.lockedPower)
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
     const zoneX: Record<Zone, number> = {
@@ -281,10 +289,11 @@ export default class GameScene extends Phaser.Scene {
     const dx = Math.abs(diveX - this.ballTargetX)
 
     if (dx < keeperReach) {
-      if (this.keeperDiveHeight === this.lockedHeight && Math.random() > 0.35) {
+      const c = this.ai.getConfidence()
+      if (this.keeperDiveHeight === this.lockedHeight && Math.random() < 0.65 + c * 0.25) {
         return false
       }
-      if (Math.random() > 0.55) return false
+      if (Math.random() < 0.45 + c * 0.20) return false
     }
 
     return true
@@ -298,6 +307,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private showResult(result: 'goal' | 'saved' | 'missed') {
+    this.ai.updateResult(result === 'goal', this.keeperDiveDir, this.keeperDiveHeight, this.lockedShotX, this.lockedShotY)
+    const prev = this.ai.getPrevShot()
+    this.ai.syncShot(result === 'goal', this.lockedShotX, this.lockedShotY, this.lockedPower, prev?.x, prev?.y)
     this.lastResult = result
     this.resultTick = 0
     this.phase = 'result'
