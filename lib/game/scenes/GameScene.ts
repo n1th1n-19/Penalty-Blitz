@@ -16,17 +16,6 @@ type GamePhase =
   | 'round_end'
   | 'game_over'
 
-const GOAL_X = 400
-const GOAL_Y_TOP = 150
-const GOAL_Y_BOTTOM = 318
-const GOAL_LEFT = 175
-const GOAL_RIGHT = 625
-const GOAL_POST_W = 8
-const KEEPER_X = 390
-const PLAYER_X = 390
-const PLAYER_GROUND = 460
-const KEEPER_GROUND = 325
-
 export default class GameScene extends Phaser.Scene {
   private playerKit!: Kit
   private keeperKit!: Kit
@@ -35,12 +24,24 @@ export default class GameScene extends Phaser.Scene {
   private ctx2d!: CanvasRenderingContext2D
   private phaserCanvas!: Phaser.GameObjects.Image
 
+  // All positions proportional to viewport — computed each access
+  private get GOAL_LEFT()     { return this.scale.width  * 0.21875 }
+  private get GOAL_RIGHT()    { return this.scale.width  * 0.78125 }
+  private get GOAL_X()        { return this.scale.width  * 0.5 }
+  private get GOAL_Y_TOP()    { return this.scale.height * 0.25 }
+  private get GOAL_Y_BOTTOM() { return this.scale.height * 0.53 }
+  private get GOAL_POST_W()   { return 8 }
+  private get PLAYER_X()      { return this.scale.width  * 0.5 }
+  private get KEEPER_X()      { return this.scale.width  * 0.5 }
+  private get PLAYER_GROUND() { return this.scale.height * 0.767 }
+  private get KEEPER_GROUND() { return this.scale.height * 0.541 }
+
   private phase: GamePhase = 'intro'
   private tick = 0
 
   // Aim
-  private aimX = GOAL_X
-  private aimY = (GOAL_Y_TOP + GOAL_Y_BOTTOM) / 2
+  private aimX = 0
+  private aimY = 0
   private lockedZone: Zone = 'centre'
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
 
@@ -52,12 +53,12 @@ export default class GameScene extends Phaser.Scene {
   private lockedHeight: Height = 'bottom'
 
   // Ball
-  private ballX = PLAYER_X
-  private ballY = PLAYER_GROUND - 10
-  private ballTargetX = GOAL_X
-  private ballTargetY = GOAL_Y_BOTTOM
-  private ballStartX = PLAYER_X
-  private ballStartY = PLAYER_GROUND - 10
+  private ballX = 0
+  private ballY = 0
+  private ballTargetX = 0
+  private ballTargetY = 0
+  private ballStartX = 0
+  private ballStartY = 0
   private ballT = 0
   private ballRotation = 0
 
@@ -112,6 +113,16 @@ export default class GameScene extends Phaser.Scene {
   create() {
     const W = this.scale.width
     const H = this.scale.height
+
+    // Initialise position state now that scale is available
+    this.aimX = this.GOAL_X
+    this.aimY = (this.GOAL_Y_TOP + this.GOAL_Y_BOTTOM) / 2
+    this.ballX = this.PLAYER_X
+    this.ballY = this.PLAYER_GROUND - 10
+    this.ballTargetX = this.GOAL_X
+    this.ballTargetY = this.GOAL_Y_BOTTOM
+    this.ballStartX = this.PLAYER_X
+    this.ballStartY = this.PLAYER_GROUND - 10
 
     // Offscreen canvas for 2D character rendering
     this.canvas2d = document.createElement('canvas')
@@ -202,14 +213,13 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private lockAim() {
-    // Determine zone from aimX position
-    const zoneWidth = (GOAL_RIGHT - GOAL_LEFT) / 3
-    const relX = this.aimX - GOAL_LEFT
+    const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
+    const relX = this.aimX - this.GOAL_LEFT
     if (relX < zoneWidth) this.lockedZone = 'left'
     else if (relX < zoneWidth * 2) this.lockedZone = 'centre'
     else this.lockedZone = 'right'
 
-    this.lockedHeight = this.aimY < (GOAL_Y_TOP + GOAL_Y_BOTTOM) / 2 ? 'top' : 'bottom'
+    this.lockedHeight = this.aimY < (this.GOAL_Y_TOP + this.GOAL_Y_BOTTOM) / 2 ? 'top' : 'bottom'
 
     this.phase = 'power'
     this.power = 0
@@ -220,35 +230,32 @@ export default class GameScene extends Phaser.Scene {
   private lockPower() {
     this.lockedPower = this.power
 
-    // Keeper decides NOW based on AI
     this.keeperDiveDir = this.ai.predictDive()
     this.ai.recordShot(this.lockedZone, this.lockedHeight, this.round)
 
-    // Set ball target
-    const zoneWidth = (GOAL_RIGHT - GOAL_LEFT) / 3
+    const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
     const zoneX: Record<Zone, number> = {
-      left: GOAL_LEFT + zoneWidth * 0.5,
-      centre: GOAL_LEFT + zoneWidth * 1.5,
-      right: GOAL_LEFT + zoneWidth * 2.5,
+      left:   this.GOAL_LEFT + zoneWidth * 0.5,
+      centre: this.GOAL_LEFT + zoneWidth * 1.5,
+      right:  this.GOAL_LEFT + zoneWidth * 2.5,
     }
 
     this.ballTargetX = zoneX[this.lockedZone] + (Math.random() - 0.5) * 20
     this.ballTargetY = this.lockedHeight === 'top'
-      ? GOAL_Y_TOP + 20 + Math.random() * 30
-      : GOAL_Y_BOTTOM - 20 - Math.random() * 30
+      ? this.GOAL_Y_TOP    + 20 + Math.random() * 30
+      : this.GOAL_Y_BOTTOM - 20 - Math.random() * 30
 
-    // Check if power causes a miss (outside goal)
     const isMiss = this.lockedPower < 20 || this.lockedPower > 95
     if (isMiss) {
       if (this.lockedPower > 95) {
-        this.ballTargetY = GOAL_Y_TOP - 40 // Over the bar
+        this.ballTargetY = this.GOAL_Y_TOP - 40
       } else {
-        this.ballTargetX = Math.random() > 0.5 ? GOAL_LEFT - 30 : GOAL_RIGHT + 30
+        this.ballTargetX = Math.random() > 0.5 ? this.GOAL_LEFT - 30 : this.GOAL_RIGHT + 30
       }
     }
 
-    this.ballStartX = PLAYER_X
-    this.ballStartY = PLAYER_GROUND - 10
+    this.ballStartX = this.PLAYER_X
+    this.ballStartY = this.PLAYER_GROUND - 10
     this.ballT = 0
 
     this.phase = 'runup'
@@ -259,27 +266,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private isGoal(): boolean {
-    const inX = this.ballTargetX > GOAL_LEFT + GOAL_POST_W && this.ballTargetX < GOAL_RIGHT - GOAL_POST_W
-    const inY = this.ballTargetY > GOAL_Y_TOP && this.ballTargetY < GOAL_Y_BOTTOM + 10
+    const inX = this.ballTargetX > this.GOAL_LEFT + this.GOAL_POST_W && this.ballTargetX < this.GOAL_RIGHT - this.GOAL_POST_W
+    const inY = this.ballTargetY > this.GOAL_Y_TOP && this.ballTargetY < this.GOAL_Y_BOTTOM + 10
 
     if (!inX || !inY) return false
 
-    // Check keeper save
-    const zoneWidth = (GOAL_RIGHT - GOAL_LEFT) / 3
+    const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
     const keeperZoneX: Record<Zone, number> = {
-      left: GOAL_LEFT + zoneWidth * 0.5,
-      centre: GOAL_LEFT + zoneWidth * 1.5,
-      right: GOAL_LEFT + zoneWidth * 2.5,
+      left:   this.GOAL_LEFT + zoneWidth * 0.5,
+      centre: this.GOAL_LEFT + zoneWidth * 1.5,
+      right:  this.GOAL_LEFT + zoneWidth * 2.5,
     }
     const keeperReach = zoneWidth * 0.7
     const diveX = keeperZoneX[this.keeperDiveDir]
     const dx = Math.abs(diveX - this.ballTargetX)
 
     if (dx < keeperReach) {
-      // Keeper in zone — check height too
       const keeperHeightBias = this.ai.getHeightBias()
       if (keeperHeightBias === this.lockedHeight && Math.random() > 0.35) {
-        return false // Saved
+        return false
       }
       if (Math.random() > 0.55) return false
     }
@@ -288,8 +293,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private determineResult(): 'goal' | 'saved' | 'missed' {
-    const inX = this.ballTargetX > GOAL_LEFT + GOAL_POST_W && this.ballTargetX < GOAL_RIGHT - GOAL_POST_W
-    const inY = this.ballTargetY > GOAL_Y_TOP && this.ballTargetY < GOAL_Y_BOTTOM + 10
+    const inX = this.ballTargetX > this.GOAL_LEFT + this.GOAL_POST_W && this.ballTargetX < this.GOAL_RIGHT - this.GOAL_POST_W
+    const inY = this.ballTargetY > this.GOAL_Y_TOP && this.ballTargetY < this.GOAL_Y_BOTTOM + 10
     if (!inX || !inY) return 'missed'
     return this.isGoal() ? 'goal' : 'saved'
   }
@@ -314,14 +319,12 @@ export default class GameScene extends Phaser.Scene {
     this.resultText.setAlpha(1)
     this.updateScoreUI()
 
-    // CPU takes penalty after result
     this.time.delayedCall(2200, () => {
       this.doCPUPenalty()
     })
   }
 
   private doCPUPenalty() {
-    // CPU shoot with some randomness
     const cpuScoreChance = 0.72
     const cpuScored = Math.random() < cpuScoreChance
     const cpuResultText = cpuScored ? 'CPU SCORES!' : 'CPU MISSED!'
@@ -338,7 +341,6 @@ export default class GameScene extends Phaser.Scene {
       this.resultText.setAlpha(0)
       this.round++
 
-      // Check game over
       const gameOver = this.checkGameOver()
       if (gameOver) return
 
@@ -373,10 +375,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private resetForNextRound() {
-    this.ballX = PLAYER_X
-    this.ballY = PLAYER_GROUND - 10
-    this.aimX = GOAL_X
-    this.aimY = (GOAL_Y_TOP + GOAL_Y_BOTTOM) / 2
+    this.ballX = this.PLAYER_X
+    this.ballY = this.PLAYER_GROUND - 10
+    this.aimX = this.GOAL_X
+    this.aimY = (this.GOAL_Y_TOP + this.GOAL_Y_BOTTOM) / 2
     this.power = 0
     this.keeperOffset = 0
     this.playerPose = POSES.idle()
@@ -384,7 +386,6 @@ export default class GameScene extends Phaser.Scene {
     this.phase = 'player_idle'
     this.updateScoreUI()
 
-    // Short delay before new round starts
     this.time.delayedCall(400, () => {
       this.phase = 'aiming'
       this.instructText.setText('← → to aim  |  SPACE to confirm')
@@ -396,7 +397,6 @@ export default class GameScene extends Phaser.Scene {
     const roundLabel = this.suddenDeath ? 'SUDDEN DEATH' : `ROUND ${this.round} / ${this.maxRounds}`
     this.roundText.setText(roundLabel)
 
-    // Show AI read
     if (this.ai.getShotCount() > 0) {
       const w = this.ai.getWeights()
       this.aiReadText.setText(
@@ -410,28 +410,25 @@ export default class GameScene extends Phaser.Scene {
     const W = this.scale.width
     const H = this.scale.height
 
-    // Aim phase — keyboard controlled
     if (this.phase === 'aiming') {
       if (this.cursors.left.isDown) {
-        this.aimX = Math.max(GOAL_LEFT + 10, this.aimX - 4)
+        this.aimX = Math.max(this.GOAL_LEFT + 10, this.aimX - 4)
       } else if (this.cursors.right.isDown) {
-        this.aimX = Math.min(GOAL_RIGHT - 10, this.aimX + 4)
+        this.aimX = Math.min(this.GOAL_RIGHT - 10, this.aimX + 4)
       }
       if (this.cursors.up.isDown) {
-        this.aimY = Math.max(GOAL_Y_TOP + 15, this.aimY - 3)
+        this.aimY = Math.max(this.GOAL_Y_TOP + 15, this.aimY - 3)
       } else if (this.cursors.down.isDown) {
-        this.aimY = Math.min(GOAL_Y_BOTTOM - 15, this.aimY + 3)
+        this.aimY = Math.min(this.GOAL_Y_BOTTOM - 15, this.aimY + 3)
       }
     }
 
-    // Power phase
     if (this.phase === 'power') {
       this.power += this.powerDir * this.powerSpeed
       if (this.power >= 100) { this.power = 100; this.powerDir = -1 }
-      if (this.power <= 0) { this.power = 0; this.powerDir = 1 }
+      if (this.power <= 0)   { this.power = 0;   this.powerDir =  1 }
     }
 
-    // Run up
     if (this.phase === 'runup') {
       this.runupTick++
       this.playerPose = POSES.runup(this.runupTick)
@@ -441,15 +438,12 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // Kick
     if (this.phase === 'kick') {
       this.playerPose = POSES.kick(this.tick)
       if (this.tick >= 25) {
         this.phase = 'ball_flying'
         this.ballT = 0
-        // Determine result at ball launch
         this.lastResult = this.determineResult()
-        // Keeper starts diving
         if (this.keeperDiveDir === 'left') {
           this.keeperPose = POSES.diveLeft(0)
         } else if (this.keeperDiveDir === 'right') {
@@ -458,18 +452,15 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // Ball flying
     if (this.phase === 'ball_flying') {
       this.ballT += 0.038
       const t = Math.min(this.ballT, 1)
 
-      // Arc trajectory
-      const arc = Math.sin(t * Math.PI) * 40
+      const arc = Math.sin(t * Math.PI) * H * 0.067
       this.ballX = this.ballStartX + (this.ballTargetX - this.ballStartX) * t
       this.ballY = this.ballStartY + (this.ballTargetY - this.ballStartY) * t - arc
       this.ballRotation += 0.18
 
-      // Keeper dive animation
       if (this.keeperDiveDir === 'left') {
         this.keeperPose = POSES.diveLeft(this.ballT * 30)
       } else if (this.keeperDiveDir === 'right') {
@@ -486,7 +477,6 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // Celebrate / sad
     if (this.phase === 'result') {
       this.resultTick++
       if (this.lastResult === 'goal') {
@@ -496,7 +486,6 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // Default keeper idle
     if (this.phase === 'player_idle' || this.phase === 'aiming' || this.phase === 'power') {
       this.keeperPose = POSES.keeperIdle(this.tick)
       this.playerPose = POSES.idle()
@@ -510,16 +499,13 @@ export default class GameScene extends Phaser.Scene {
 
     ctx.clearRect(0, 0, W, H)
 
-    // Draw keeper character
-    drawCharacter(ctx, KEEPER_X, KEEPER_GROUND, this.keeperKit, this.keeperPose, true, true)
+    drawCharacter(ctx, this.KEEPER_X, this.KEEPER_GROUND, this.keeperKit, this.keeperPose, true, true)
 
-    // Draw player character
     const showPlayer = this.phase !== 'game_over'
     if (showPlayer) {
-      drawCharacter(ctx, PLAYER_X, PLAYER_GROUND, this.playerKit, this.playerPose, false, false, true)
+      drawCharacter(ctx, this.PLAYER_X, this.PLAYER_GROUND, this.playerKit, this.playerPose, false, false, true)
     }
 
-    // Draw ball
     const ballVisible = !['player_idle'].includes(this.phase)
     if (ballVisible) {
       const ballR = this.phase === 'ball_flying'
@@ -528,34 +514,32 @@ export default class GameScene extends Phaser.Scene {
       drawBall(ctx, this.ballX, this.ballY, ballR, this.ballRotation)
     }
 
-    // Update texture
     this.textures.get('char_canvas').source[0].update()
 
     // Aim cursor
     this.aimIndicator.clear()
     if (this.phase === 'aiming') {
       this.aimIndicator.lineStyle(2, 0xFFFF00, 0.9)
-      this.aimIndicator.strokeCircle(this.aimX, this.getAimY(), 12)
+      this.aimIndicator.strokeCircle(this.aimX, this.aimY, 12)
       this.aimIndicator.lineStyle(1, 0xFFFF00, 0.5)
-      this.aimIndicator.lineBetween(this.aimX, this.getAimY() - 18, this.aimX, this.getAimY() + 18)
-      this.aimIndicator.lineBetween(this.aimX - 18, this.getAimY(), this.aimX + 18, this.getAimY())
+      this.aimIndicator.lineBetween(this.aimX, this.aimY - 18, this.aimX, this.aimY + 18)
+      this.aimIndicator.lineBetween(this.aimX - 18, this.aimY, this.aimX + 18, this.aimY)
     }
 
     // Power bar
     this.powerBarBg.clear()
     this.powerBarFill.clear()
     if (this.phase === 'power') {
-      const bx = W / 2 - 130
-      const by = H - 85
-      const bw = 260
-      const bh = 22
+      const bw = W * 0.325
+      const bh = Math.max(16, H * 0.037)
+      const bx = W / 2 - bw / 2
+      const by = H - H * 0.14
 
       this.powerBarBg.fillStyle(0x222222, 0.85)
       this.powerBarBg.fillRoundedRect(bx, by, bw, bh, 4)
       this.powerBarBg.lineStyle(1, 0x666666, 1)
       this.powerBarBg.strokeRoundedRect(bx, by, bw, bh, 4)
 
-      // Colour zones
       const dangerX = bx + bw * 0.85
       this.powerBarFill.fillStyle(0x44CC44, 1)
       this.powerBarFill.fillRect(bx + 2, by + 2, Math.min((this.power / 100) * (bw - 4), (bw - 4) * 0.84), bh - 4)
@@ -564,10 +548,6 @@ export default class GameScene extends Phaser.Scene {
         this.powerBarFill.fillRect(dangerX, by + 2, Math.min(((this.power - 85) / 15) * (bw * 0.15 - 2), bw * 0.15 - 2), bh - 4)
       }
     }
-  }
-
-  private getAimY(): number {
-    return this.aimY
   }
 
   destroy() {

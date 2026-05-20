@@ -62,18 +62,18 @@ export default function JerseySelect({ onSelect }: Props) {
   return (
     <div style={{
       width: '100%',
-      height: '100%',
+      height: '100dvh',
       background: '#0a0f0a',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      paddingTop: 24,
+      paddingTop: 'clamp(12px, 3vh, 24px)',
       fontFamily: 'monospace',
       color: '#c8e8c8',
       overflowY: 'auto',
     }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: 4, marginBottom: 6, color: '#7dba7d' }}>
+      <h1 style={{ fontSize: 'clamp(16px, 5vw, 24px)', fontWeight: 700, letterSpacing: 4, marginBottom: 6, color: '#7dba7d' }}>
         PENALTY SHOOTOUT
       </h1>
       <p style={{ fontSize: 13, color: '#4a6a4a', marginBottom: 20 }}>Choose your kit</p>
@@ -104,10 +104,10 @@ export default function JerseySelect({ onSelect }: Props) {
       {/* Kit grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
         gap: 10,
         width: '100%',
-        maxWidth: 560,
+        maxWidth: 'min(560px, 100%)',
         padding: '0 16px',
         marginBottom: 24,
       }}>
@@ -129,7 +129,7 @@ export default function JerseySelect({ onSelect }: Props) {
         padding: '12px 24px',
         textAlign: 'center',
         marginBottom: 24,
-        minWidth: 200,
+        minWidth: 'min(200px, 90%)',
       }}>
         <p style={{ fontSize: 11, color: '#4a6a4a', marginBottom: 4 }}>SELECTED</p>
         <p style={{ fontSize: 16, fontWeight: 700, color: '#c8e8c8' }}>{selected.name}</p>

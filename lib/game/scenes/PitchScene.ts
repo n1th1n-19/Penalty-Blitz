@@ -40,7 +40,7 @@ export default class PitchScene extends Phaser.Scene {
 
     // Penalty arc
     g.lineStyle(1, 0xffffff, 0.3)
-    g.strokeCircle(W / 2, H * 0.9, 80)
+    g.strokeCircle(W / 2, H * 0.9, W * 0.1)
 
     // Goal net background
     this.drawNet(g, W, H)
@@ -79,8 +79,8 @@ export default class PitchScene extends Phaser.Scene {
   }
 
   private drawNet(g: Phaser.GameObjects.Graphics, W: number, H: number) {
-    const goalLeft = 175
-    const goalRight = 625
+    const goalLeft = W * 0.21875
+    const goalRight = W * 0.78125
     const goalTop = H * 0.25
     const goalBottom = H * 0.53
     const netDepth = 28
@@ -106,8 +106,8 @@ export default class PitchScene extends Phaser.Scene {
   }
 
   private drawGoalPosts(g: Phaser.GameObjects.Graphics, W: number, H: number) {
-    const goalLeft = 175
-    const goalRight = 625
+    const goalLeft = W * 0.21875
+    const goalRight = W * 0.78125
     const goalTop = H * 0.25
     const goalBottom = H * 0.53
     const postColor = 0xf0f0f0

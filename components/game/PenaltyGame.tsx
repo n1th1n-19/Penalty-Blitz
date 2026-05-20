@@ -52,8 +52,8 @@ export default function PenaltyGame() {
       gameRef.current = null
     }
 
-    const W = Math.min(window.innerWidth, 800)
-    const H = Math.min(window.innerHeight, 600)
+    const W = window.innerWidth
+    const H = window.innerHeight
 
     const keeperKit = getKeeperKit(kit)
 
@@ -101,7 +101,7 @@ export default function PenaltyGame() {
   }, [])
 
   return (
-    <div style={{ width: '100%', height: '100vh', background: '#0a0f0a', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: '100%', height: '100dvh', background: '#0a0f0a', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {screen === 'jersey' && (
         <div style={{ width: '100%', height: '100%' }}>
           <JerseySelect onSelect={startGame} />
