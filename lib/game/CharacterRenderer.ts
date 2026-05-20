@@ -109,8 +109,8 @@ export const POSES = {
   diveLeft: (t: number): CharacterPose => {
     const p = Math.min(t / 15, 1)
     return {
-      headY: -p * 20,
-      torsoY: -p * 10,
+      headY: 0,
+      torsoY: 0,
       leftArmAngle: -140 * p,
       rightArmAngle: -40 * p,
       leftLegAngle: 30 * p,
@@ -125,8 +125,8 @@ export const POSES = {
   diveRight: (t: number): CharacterPose => {
     const p = Math.min(t / 15, 1)
     return {
-      headY: -p * 20,
-      torsoY: -p * 10,
+      headY: 0,
+      torsoY: 0,
       leftArmAngle: 40 * p,
       rightArmAngle: 140 * p,
       leftLegAngle: 10 * p,

@@ -65,6 +65,7 @@ export default class GameScene extends Phaser.Scene {
   // Keeper
   private keeperOffset = 0
   private keeperDiveDir: Zone = 'centre'
+  private keeperDiveHeight: Height = 'bottom'
   private keeperPose: CharacterPose = POSES.keeperIdle(0)
 
   // Player
@@ -231,6 +232,7 @@ export default class GameScene extends Phaser.Scene {
     this.lockedPower = this.power
 
     this.keeperDiveDir = this.ai.predictDive()
+    this.keeperDiveHeight = this.ai.getHeightBias()
     this.ai.recordShot(this.lockedZone, this.lockedHeight, this.round)
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
@@ -282,8 +284,7 @@ export default class GameScene extends Phaser.Scene {
     const dx = Math.abs(diveX - this.ballTargetX)
 
     if (dx < keeperReach) {
-      const keeperHeightBias = this.ai.getHeightBias()
-      if (keeperHeightBias === this.lockedHeight && Math.random() > 0.35) {
+      if (this.keeperDiveHeight === this.lockedHeight && Math.random() > 0.35) {
         return false
       }
       if (Math.random() > 0.55) return false
@@ -381,6 +382,7 @@ export default class GameScene extends Phaser.Scene {
     this.aimY = (this.GOAL_Y_TOP + this.GOAL_Y_BOTTOM) / 2
     this.power = 0
     this.keeperOffset = 0
+    this.keeperDiveHeight = 'bottom'
     this.playerPose = POSES.idle()
     this.keeperPose = POSES.keeperIdle(0)
     this.phase = 'player_idle'
@@ -444,10 +446,11 @@ export default class GameScene extends Phaser.Scene {
         this.phase = 'ball_flying'
         this.ballT = 0
         this.lastResult = this.determineResult()
+        // Keeper faces player (mirrored), so diveLeft/Right are swapped relative to screen zones
         if (this.keeperDiveDir === 'left') {
-          this.keeperPose = POSES.diveLeft(0)
-        } else if (this.keeperDiveDir === 'right') {
           this.keeperPose = POSES.diveRight(0)
+        } else if (this.keeperDiveDir === 'right') {
+          this.keeperPose = POSES.diveLeft(0)
         }
       }
     }
@@ -461,10 +464,18 @@ export default class GameScene extends Phaser.Scene {
       this.ballY = this.ballStartY + (this.ballTargetY - this.ballStartY) * t - arc
       this.ballRotation += 0.18
 
+      const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
+      const p = Math.min(this.ballT * 3, 1)
       if (this.keeperDiveDir === 'left') {
-        this.keeperPose = POSES.diveLeft(this.ballT * 30)
+        const pose = POSES.diveRight(this.ballT * 30)
+        pose.offsetY = this.keeperDiveHeight === 'top' ? -p * H * 0.25 : p * 15
+        this.keeperPose = pose
+        this.keeperOffset = -zoneWidth * p
       } else if (this.keeperDiveDir === 'right') {
-        this.keeperPose = POSES.diveRight(this.ballT * 30)
+        const pose = POSES.diveLeft(this.ballT * 30)
+        pose.offsetY = this.keeperDiveHeight === 'top' ? -p * H * 0.25 : p * 15
+        this.keeperPose = pose
+        this.keeperOffset = zoneWidth * p
       }
 
       if (t >= 1) {
@@ -499,7 +510,7 @@ export default class GameScene extends Phaser.Scene {
 
     ctx.clearRect(0, 0, W, H)
 
-    drawCharacter(ctx, this.KEEPER_X, this.KEEPER_GROUND, this.keeperKit, this.keeperPose, true, true)
+    drawCharacter(ctx, this.KEEPER_X + this.keeperOffset, this.KEEPER_GROUND, this.keeperKit, this.keeperPose, true, true)
 
     const showPlayer = this.phase !== 'game_over'
     if (showPlayer) {
