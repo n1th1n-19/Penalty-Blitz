@@ -5,6 +5,7 @@ export interface ShotRecord {
   zone: Zone
   height: Height
   round: number
+  power: number
 }
 
 export interface Kit {

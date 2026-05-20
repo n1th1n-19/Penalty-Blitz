@@ -227,9 +227,10 @@ export default class GameScene extends Phaser.Scene {
   private lockPower() {
     this.lockedPower = this.power
 
-    this.keeperDiveDir = this.ai.predictDive()
-    this.keeperDiveHeight = this.ai.getHeightBias()
-    this.ai.recordShot(this.lockedZone, this.lockedHeight, this.round)
+    const prediction = this.ai.predictShot()
+    this.keeperDiveDir = prediction.zone
+    this.keeperDiveHeight = prediction.height
+    this.ai.recordShot(this.lockedZone, this.lockedHeight, this.round, this.lockedPower)
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
     const zoneX: Record<Zone, number> = {
