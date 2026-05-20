@@ -8,9 +8,29 @@ interface Props {
   onRestart: () => void
 }
 
-export default function ResultScreen({ playerScore, cpuScore, playerKit, onRestart }: Props) {
-  const won = playerScore > cpuScore
-  const draw = playerScore === cpuScore
+export default function ResultScreen({ playerScore, cpuScore: totalRounds, playerKit, onRestart }: Props) {
+  const ratio = playerScore / totalRounds
+
+  const rating =
+    ratio === 1   ? 'PERFECT!' :
+    ratio >= 0.8  ? 'EXCELLENT' :
+    ratio >= 0.6  ? 'GOOD' :
+    ratio >= 0.4  ? 'DECENT' :
+                    'ROUGH DAY'
+
+  const ratingColor =
+    ratio === 1   ? '#FFD700' :
+    ratio >= 0.8  ? '#5dca8a' :
+    ratio >= 0.6  ? '#88ccff' :
+    ratio >= 0.4  ? '#FFDD55' :
+                    '#e24b4a'
+
+  const comment =
+    ratio === 1   ? 'The keeper had no chance. Flawless.' :
+    ratio >= 0.8  ? 'Excellent shooting. You kept the keeper guessing.' :
+    ratio >= 0.6  ? 'Solid technique. A couple slipped away.' :
+    ratio >= 0.4  ? 'Mixed bag. Aim for the corners next time.' :
+                    'The keeper read your shots. Mix it up next time.'
 
   return (
     <div style={{
@@ -29,15 +49,15 @@ export default function ResultScreen({ playerScore, cpuScore, playerKit, onResta
       <h1 style={{
         fontSize: 'clamp(22px, 7vw, 36px)',
         fontWeight: 700,
-        color: won ? '#5dca8a' : draw ? '#FFDD55' : '#e24b4a',
+        color: ratingColor,
         letterSpacing: 3,
       }}>
-        {won ? 'YOU WIN!' : draw ? 'DRAW' : 'DEFEAT'}
+        {rating}
       </h1>
 
       <div style={{
         display: 'flex',
-        gap: 24,
+        gap: 16,
         alignItems: 'center',
         background: '#0d150d',
         border: '1px solid #2a3a2a',
@@ -48,19 +68,15 @@ export default function ResultScreen({ playerScore, cpuScore, playerKit, onResta
           <p style={{ fontSize: 11, color: '#4a6a4a', marginBottom: 4 }}>{playerKit.shortName}</p>
           <p style={{ fontSize: 'clamp(32px, 10vw, 52px)', fontWeight: 700, color: '#c8e8c8' }}>{playerScore}</p>
         </div>
-        <p style={{ fontSize: 28, color: '#4a6a4a' }}>–</p>
+        <p style={{ fontSize: 20, color: '#4a6a4a' }}>out of</p>
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: '#4a6a4a', marginBottom: 4 }}>CPU</p>
-          <p style={{ fontSize: 'clamp(32px, 10vw, 52px)', fontWeight: 700, color: '#c8e8c8' }}>{cpuScore}</p>
+          <p style={{ fontSize: 11, color: '#4a6a4a', marginBottom: 4 }}>SHOTS</p>
+          <p style={{ fontSize: 'clamp(32px, 10vw, 52px)', fontWeight: 700, color: '#c8e8c8' }}>{totalRounds}</p>
         </div>
       </div>
 
       <p style={{ fontSize: 13, color: '#4a6a4a', maxWidth: 300, textAlign: 'center' }}>
-        {won
-          ? 'Excellent shooting. You kept the keeper guessing.'
-          : draw
-          ? 'So close. Penalties decided.'
-          : 'The keeper read your shots. Mix it up next time.'}
+        {comment}
       </p>
 
       <button

@@ -74,10 +74,8 @@ export default class GameScene extends Phaser.Scene {
 
   // Scores
   private playerScore = 0
-  private cpuScore = 0
   private round = 1
   private maxRounds = 5
-  private suddenDeath = false
 
   // Result
   private lastResult: 'goal' | 'saved' | 'missed' = 'goal'
@@ -94,7 +92,7 @@ export default class GameScene extends Phaser.Scene {
   private instructText!: Phaser.GameObjects.Text
   private aiReadText!: Phaser.GameObjects.Text
 
-  private onGameOver?: (playerScore: number, cpuScore: number) => void
+  private onGameOver?: (playerScore: number, totalRounds: number) => void
 
   constructor() {
     super({ key: 'GameScene' })
@@ -106,9 +104,7 @@ export default class GameScene extends Phaser.Scene {
     this.onGameOver = data.onGameOver
     this.ai = new KeeperAI()
     this.playerScore = 0
-    this.cpuScore = 0
     this.round = 1
-    this.suddenDeath = false
   }
 
   create() {
@@ -247,7 +243,7 @@ export default class GameScene extends Phaser.Scene {
       ? this.GOAL_Y_TOP    + 20 + Math.random() * 30
       : this.GOAL_Y_BOTTOM - 20 - Math.random() * 30
 
-    const isMiss = this.lockedPower < 20 || this.lockedPower > 95
+    const isMiss = this.lockedPower < 5 || this.lockedPower > 95
     if (isMiss) {
       if (this.lockedPower > 95) {
         this.ballTargetY = this.GOAL_Y_TOP - 40
@@ -321,24 +317,6 @@ export default class GameScene extends Phaser.Scene {
     this.updateScoreUI()
 
     this.time.delayedCall(2200, () => {
-      this.doCPUPenalty()
-    })
-  }
-
-  private doCPUPenalty() {
-    const cpuScoreChance = 0.72
-    const cpuScored = Math.random() < cpuScoreChance
-    const cpuResultText = cpuScored ? 'CPU SCORES!' : 'CPU MISSED!'
-    const cpuColor = cpuScored ? '#FF4444' : '#00FF88'
-
-    if (cpuScored) this.cpuScore++
-    this.updateScoreUI()
-
-    this.resultText.setText(cpuResultText)
-    this.resultText.setColor(cpuColor)
-    this.resultText.setAlpha(1)
-
-    this.time.delayedCall(1800, () => {
       this.resultText.setAlpha(0)
       this.round++
 
@@ -350,25 +328,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private checkGameOver(): boolean {
-    if (this.suddenDeath) {
-      if (this.playerScore !== this.cpuScore) {
-        this.phase = 'game_over'
-        this.time.delayedCall(500, () => {
-          if (this.onGameOver) this.onGameOver(this.playerScore, this.cpuScore)
-        })
-        return true
-      }
-      return false
-    }
-
     if (this.round > this.maxRounds) {
-      if (this.playerScore === this.cpuScore) {
-        this.suddenDeath = true
-        return false
-      }
       this.phase = 'game_over'
       this.time.delayedCall(500, () => {
-        if (this.onGameOver) this.onGameOver(this.playerScore, this.cpuScore)
+        if (this.onGameOver) this.onGameOver(this.playerScore, this.maxRounds)
       })
       return true
     }
@@ -395,8 +358,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private updateScoreUI() {
-    this.scoreText.setText(`YOU  ${this.playerScore} – ${this.cpuScore}  CPU`)
-    const roundLabel = this.suddenDeath ? 'SUDDEN DEATH' : `ROUND ${this.round} / ${this.maxRounds}`
+    this.scoreText.setText(`GOALS  ${this.playerScore} / ${this.maxRounds}`)
+    const roundLabel = `ROUND ${this.round} / ${this.maxRounds}`
     this.roundText.setText(roundLabel)
 
     if (this.ai.getShotCount() > 0) {
