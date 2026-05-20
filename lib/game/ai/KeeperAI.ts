@@ -1,4 +1,5 @@
 import { Zone, Height, ShotRecord, coordToZone, coordToHeight } from '../types'
+import { NeuralNetwork } from './NeuralNetwork'
 
 type ShotType = `${Zone}-${Height}`
 const ZONES: Zone[] = ['left', 'centre', 'right']
@@ -28,6 +29,8 @@ export class KeeperAI {
   private populationClusters: { x: number; y: number; weight: number }[] = []
   private populationTransitions: Partial<Record<ShotType, Partial<Record<ShotType, number>>>> = {}
   private populationTotal = 0
+  private nn = new NeuralNetwork()
+  private nnTrained = false
   readonly playerId: string
 
   constructor() {
@@ -73,12 +76,61 @@ export class KeeperAI {
       )
       this.populationTransitions = data.transitions ?? {}
       this.populationTotal = data.totalShots ?? 0
+      this.trainNN()
     } catch {}
   }
 
+  private trainNN(): void {
+    const pairs: { x: number; y: number; targetIdx: number; weight: number }[] = []
+    let totalWeight = 0
+
+    for (const [fromType, toMap] of Object.entries(this.populationTransitions)) {
+      if (!toMap) continue
+      const [fz, fh] = fromType.split('-') as [Zone, Height]
+      const fromX = ZONE_X[fz]
+      const fromY = HEIGHT_Y[fh]
+      for (const [toType, count] of Object.entries(toMap)) {
+        const toIdx = SHOT_TYPES.indexOf(toType as ShotType)
+        if (toIdx === -1 || !count) continue
+        pairs.push({ x: fromX, y: fromY, targetIdx: toIdx, weight: count })
+        totalWeight += count
+      }
+    }
+
+    if (pairs.length === 0) { this.nnTrained = true; return }
+    for (const p of pairs) p.weight /= totalWeight
+
+    for (let epoch = 0; epoch < 300; epoch++) {
+      for (let i = pairs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[pairs[i], pairs[j]] = [pairs[j], pairs[i]]
+      }
+      for (const { x, y, targetIdx, weight } of pairs) {
+        const jx = Math.max(0, Math.min(1, x + (Math.random() - 0.5) * 0.10))
+        const jy = Math.max(0, Math.min(1, y + (Math.random() - 0.5) * 0.10))
+        this.nn.train(jx, jy, targetIdx, 0.05 * weight * pairs.length)
+      }
+    }
+    this.nnTrained = true
+  }
+
   recordShot(x: number, y: number, power: number): void {
+    if (this.history.length >= 1) {
+      const prev = this.history[this.history.length - 1]
+      const toIdx = SHOT_TYPES.indexOf(this.dominantType(x, y))
+      if (toIdx !== -1) this.nn.train(prev.x, prev.y, toIdx, 0.005)
+    }
     this.history.push({ x, y, power })
     this.savePersistent()
+  }
+
+  private getNNWeights(): Record<ShotType, number> | null {
+    if (!this.nnTrained && this.history.length < 3) return null
+    const n = this.history.length
+    const px = n > 0 ? this.history[n - 1].x : 0.5
+    const py = n > 0 ? this.history[n - 1].y : 0.75
+    const probs = this.nn.predict(px, py)
+    return Object.fromEntries(SHOT_TYPES.map((t, i) => [t, probs[i] * 100])) as Record<ShotType, number>
   }
 
   syncShot(scored: boolean, x: number, y: number, power: number, prevX?: number, prevY?: number): void {
@@ -185,12 +237,22 @@ export class KeeperAI {
   }
 
   predictShot(): { zone: Zone; height: Height; x: number; y: number } {
-    const freq = this.getJointWeights()
+    const freq   = this.getJointWeights()
     const markov = this.getMarkovWeights()
-    const blend = markov ? Math.min(0.45, this.history.length * 0.1) : 0
+    const nn     = this.getNNWeights()
+
+    const n = this.history.length
+    const markovBlend = markov ? Math.min(0.25, n * 0.06) : 0
+    const nnBlend     = nn ? (this.nnTrained ? 0.15 : 0) + Math.min(0.25, n * 0.05) : 0
+    const freqBlend   = Math.max(0, 1 - markovBlend - nnBlend)
 
     const weights = Object.fromEntries(
-      SHOT_TYPES.map(t => [t, (1 - blend) * freq[t] + blend * (markov?.[t] ?? freq[t])])
+      SHOT_TYPES.map(t => [
+        t,
+        freqBlend   * freq[t] +
+        markovBlend * (markov?.[t] ?? freq[t]) +
+        nnBlend     * (nn?.[t]     ?? freq[t]),
+      ])
     ) as Record<ShotType, number>
 
     const total = SHOT_TYPES.reduce((s, t) => s + weights[t], 0)

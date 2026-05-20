@@ -89,7 +89,6 @@ export default class GameScene extends Phaser.Scene {
   private aimIndicator!: Phaser.GameObjects.Graphics
   private powerBarBg!: Phaser.GameObjects.Graphics
   private powerBarFill!: Phaser.GameObjects.Graphics
-  private uiText!: Phaser.GameObjects.Text
   private scoreText!: Phaser.GameObjects.Text
   private resultText!: Phaser.GameObjects.Text
   private roundText!: Phaser.GameObjects.Text
@@ -237,11 +236,12 @@ export default class GameScene extends Phaser.Scene {
   private lockPower() {
     this.lockedPower = this.power
 
-    const prediction = this.ai.predictShot()
-    this.keeperDiveDir = prediction.zone
-    this.keeperDiveHeight = prediction.height
-    this.keeperPredX = prediction.x
-    this.keeperPredY = prediction.y
+    this.ai.predictShot()  // update NN confidence / drift model
+    this.keeperDiveDir    = this.lockedZone
+    this.keeperDiveHeight = this.lockedHeight
+    // Keeper reads aim with small imperfection (±4% of goal width)
+    this.keeperPredX = Math.max(0, Math.min(1, this.lockedShotX + (Math.random() - 0.5) * 0.08))
+    this.keeperPredY = Math.max(0, Math.min(1, this.lockedShotY + (Math.random() - 0.5) * 0.06))
     this.ai.recordShot(this.lockedShotX, this.lockedShotY, this.lockedPower)
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
@@ -294,14 +294,12 @@ export default class GameScene extends Phaser.Scene {
     const dy = Math.abs(keeperScreenY - this.ballTargetY) / goalH
 
     const c = this.ai.getConfidence()
-    // Keeper reach: 18% of goal width horizontally, 30% vertically
-    const reachX = 0.18 + c * 0.06
-    const reachY = 0.30 + c * 0.08
+    const reachX = 0.15 + c * 0.04
+    const reachY = 0.28 + c * 0.06
 
     if (dx < reachX && dy < reachY) {
-      // Inside reach — probability of save scales with how centered the prediction is
       const centeredness = 1 - Math.sqrt((dx / reachX) ** 2 + (dy / reachY) ** 2) * 0.5
-      if (Math.random() < 0.60 * centeredness + c * 0.20) return false
+      if (Math.random() < 0.68 * centeredness + c * 0.12) return false
     }
 
     return true
@@ -393,7 +391,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  update(time: number, delta: number) {
+  update(_time: number, _delta: number) {
     this.tick++
     const W = this.scale.width
     const H = this.scale.height
