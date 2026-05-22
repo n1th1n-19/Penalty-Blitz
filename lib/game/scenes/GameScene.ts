@@ -3,6 +3,7 @@ import { Kit, Zone, Height } from '../types'
 import { KeeperAI } from '../ai/KeeperAI'
 import { drawCharacter, drawBall, POSES, CharacterPose } from '../CharacterRenderer'
 import { DifficultyConfig, DIFFICULTY } from '../difficulty'
+import { audio } from '../audio'
 
 type GamePhase =
   | 'intro'
@@ -212,6 +213,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(600, () => {
       this.phase = 'aiming'
+      audio.play('crowdHush')
       this.instructText.setText('← → to aim  |  SPACE to confirm')
     })
   }
@@ -265,6 +267,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private lockPower() {
+    audio.play('powerbarLock')
     // Cancel composure ring tween
     this.tweens.killTweensOf(this)
     this.composureRingActive = false
@@ -372,6 +375,46 @@ export default class GameScene extends Phaser.Scene {
       this.resultText.setColor('#FF8800')
     }
 
+    if (result === 'goal') {
+      this.cameras.main.shake(300, 0.006)
+      audio.play('goalCheer')
+      audio.play('goalHorn')
+
+      // Floating score pop
+      const popText = this.add.text(this.ballX, this.ballY - 20, '+1 GOAL', {
+        fontFamily: 'Arial Black, Arial',
+        fontSize: '22px',
+        color: '#ffffff',
+        stroke: '#00aa00',
+        strokeThickness: 4,
+      }).setDepth(50)
+      this.tweens.add({
+        targets: popText,
+        y: this.ballY - 80,
+        alpha: 0,
+        duration: 1200,
+        ease: 'Quad.easeOut',
+        onComplete: () => popText.destroy(),
+      })
+
+      // Particle burst (confetti from net)
+      try {
+        const particles = this.add.particles(this.ballTargetX, this.ballTargetY, 'ball', {
+          speed: { min: 80, max: 200 },
+          angle: { min: 200, max: 340 },
+          scale: { start: 0.3, end: 0 },
+          lifespan: 800,
+          quantity: 12,
+          tint: [0xffd700, 0x00ff44, 0xffffff, 0xff4444],
+        })
+        this.time.delayedCall(900, () => particles.destroy())
+      } catch {}
+    } else if (result === 'saved') {
+      audio.play('save')
+    } else {
+      audio.play('missWhoosh')
+    }
+
     this.resultText.setAlpha(1)
     this.updateScoreUI()
 
@@ -389,6 +432,9 @@ export default class GameScene extends Phaser.Scene {
   private checkGameOver(): boolean {
     if (this.round > this.maxRounds) {
       this.phase = 'game_over'
+      if (this.playerScore === this.maxRounds) {
+        audio.play('perfectFanfare')
+      }
       this.time.delayedCall(500, () => {
         if (this.onGameOver) this.onGameOver(this.playerScore, this.maxRounds)
       })
@@ -414,6 +460,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(400, () => {
       this.phase = 'aiming'
+      audio.play('crowdHush')
       this.instructText.setText('← → to aim  |  SPACE to confirm')
     })
   }
@@ -462,6 +509,7 @@ export default class GameScene extends Phaser.Scene {
       this.power += this.powerDir * this.powerSpeed
       if (this.power >= 100) { this.power = 100; this.powerDir = -1 }
       if (this.power <= 0)   { this.power = 0;   this.powerDir =  1 }
+      audio.play('powerbarTick')
     }
 
     if (this.phase === 'runup') {
@@ -475,6 +523,10 @@ export default class GameScene extends Phaser.Scene {
 
     if (this.phase === 'kick') {
       this.playerPose = POSES.kick(this.tick)
+      if (this.tick === 1) {
+        audio.play('kick')
+        this.cameras.main.shake(150, 0.003)
+      }
       if (this.tick >= 25) {
         this.phase = 'ball_flying'
         this.ballT = 0
