@@ -128,13 +128,18 @@ export default function LeaderboardTable({ myUserId }: Props) {
   const [rows, setRows] = useState<Row[]>([])
   const [myRow, setMyRow] = useState<Row | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
+    setError(null)
 
     fetch(`/api/leaderboard?metric=${metric}&period=${period}`)
-      .then((res) => res.json() as Promise<ApiResponse>)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json() as Promise<ApiResponse>
+      })
       .then((data) => {
         if (cancelled) return
         setRows(data.rows)
@@ -142,7 +147,10 @@ export default function LeaderboardTable({ myUserId }: Props) {
         setLoading(false)
       })
       .catch(() => {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setError('Failed to load leaderboard. Please try again.')
+          setLoading(false)
+        }
       })
 
     return () => {
@@ -195,6 +203,8 @@ export default function LeaderboardTable({ myUserId }: Props) {
       {/* Loading state */}
       {loading ? (
         <p className="text-center text-gray-400 py-12">Loading...</p>
+      ) : error ? (
+        <p className="text-center text-red-500 py-8">{error}</p>
       ) : (
         <div className="space-y-2">
           {rows.length === 0 && (
@@ -207,7 +217,7 @@ export default function LeaderboardTable({ myUserId }: Props) {
               row={row}
               metric={metric}
               isOwn={row.userId === myUserId}
-              showYouLabel={false}
+              showYouLabel={row.userId === myUserId}
             />
           ))}
 
