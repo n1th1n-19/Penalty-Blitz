@@ -278,12 +278,12 @@ export default class GameScene extends Phaser.Scene {
     // Low composure → shot drifts further from aim point
     const inaccuracy = (1 - this.composureAccuracy) * 0.15
 
-    this.ai.predictShot(this.difficultyConfig.aiWeight)  // update NN confidence / drift model
-    this.keeperDiveDir    = this.lockedZone
-    this.keeperDiveHeight = this.lockedHeight
-    // Keeper reads aim with small imperfection (±4% of goal width)
-    this.keeperPredX = Math.max(0, Math.min(1, this.lockedShotX + (Math.random() - 0.5) * 0.08))
-    this.keeperPredY = Math.max(0, Math.min(1, this.lockedShotY + (Math.random() - 0.5) * 0.06))
+    // Keeper commits to a dive based on AI prediction — may be wrong zone entirely
+    const prediction = this.ai.predictShot(this.difficultyConfig.aiWeight)
+    this.keeperDiveDir    = prediction.zone
+    this.keeperDiveHeight = prediction.height
+    this.keeperPredX = prediction.x
+    this.keeperPredY = prediction.y
     this.ai.recordShot(this.lockedShotX, this.lockedShotY, this.lockedPower)
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
@@ -342,7 +342,7 @@ export default class GameScene extends Phaser.Scene {
 
     if (dx < reachX && dy < reachY) {
       const centeredness = 1 - Math.sqrt((dx / reachX) ** 2 + (dy / reachY) ** 2) * 0.5
-      if (Math.random() < 0.68 * centeredness + c * 0.12) return false
+      if (Math.random() < 0.85 * centeredness + c * 0.10) return false
     }
 
     return true
