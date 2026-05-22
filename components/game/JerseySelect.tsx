@@ -6,6 +6,8 @@ import { drawMiniCharacter } from '../../lib/game/CharacterRenderer'
 
 interface Props {
   onSelect: (kit: Kit) => void
+  initialKitId?: string
+  submitLabel?: string
 }
 
 function KitCard({ kit, selected, onSelect }: { kit: Kit; selected: boolean; onSelect: () => void }) {
@@ -53,9 +55,12 @@ function KitCard({ kit, selected, onSelect }: { kit: Kit; selected: boolean; onS
   )
 }
 
-export default function JerseySelect({ onSelect }: Props) {
-  const [tab, setTab] = useState<'club' | 'country'>('club')
-  const [selected, setSelected] = useState<Kit>(CLUB_KITS[0])
+export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KICK OFF' }: Props) {
+  const resolvedInitial = initialKitId
+    ? ([...CLUB_KITS, ...COUNTRY_KITS].find(k => k.id === initialKitId) ?? CLUB_KITS[0])
+    : CLUB_KITS[0]
+  const [tab, setTab] = useState<'club' | 'country'>(resolvedInitial.type === 'country' ? 'country' : 'club')
+  const [selected, setSelected] = useState<Kit>(resolvedInitial)
 
   const kits = tab === 'club' ? CLUB_KITS : COUNTRY_KITS
 
@@ -157,7 +162,7 @@ export default function JerseySelect({ onSelect }: Props) {
           marginBottom: 32,
         }}
       >
-        KICK OFF
+        {submitLabel}
       </button>
     </div>
   )
