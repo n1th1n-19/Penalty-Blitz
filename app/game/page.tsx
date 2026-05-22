@@ -1,19 +1,22 @@
-'use client'
-import dynamic from 'next/dynamic'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { CLUB_KITS, COUNTRY_KITS } from '@/lib/game/kits'
+import GamePageClient from './GamePageClient'
 
-const PenaltyGame = dynamic(() => import('../../components/game/PenaltyGame'), {
-  ssr: false,
-  loading: () => (
-    <div style={{ position: 'fixed', inset: 0, background: '#040d06', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'white', fontFamily: 'monospace', letterSpacing: '0.3em', fontSize: '14px' }}>LOADING...</p>
-    </div>
-  ),
-})
+const ALL_KITS = [...CLUB_KITS, ...COUNTRY_KITS]
 
-export default function GamePage() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 20 }}>
-      <PenaltyGame />
-    </div>
-  )
+export default async function GamePage() {
+  const session = await getServerSession(authOptions)
+
+  let initialKit = undefined
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { avatarKitId: true },
+    })
+    initialKit = ALL_KITS.find(k => k.id === user?.avatarKitId) ?? ALL_KITS[0]
+  }
+
+  return <GamePageClient initialKit={initialKit} />
 }

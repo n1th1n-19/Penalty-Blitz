@@ -45,11 +45,15 @@ function getKeeperKit(playerKit: Kit): Kit {
   }
 }
 
-export default function PenaltyGame() {
+interface PenaltyGameProps {
+  initialKit?: Kit
+}
+
+export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
-  const [screen, setScreen] = useState<Screen>('jersey')
-  const [playerKit, setPlayerKit] = useState<Kit>(CLUB_KITS[0])
+  const [screen, setScreen] = useState<Screen>(initialKit ? 'difficulty' : 'jersey')
+  const [playerKit, setPlayerKit] = useState<Kit>(initialKit ?? CLUB_KITS[0])
   const [finalScore, setFinalScore] = useState({ player: 0, cpu: 0 })
   const [difficulty, setDifficulty] = useState<DifficultyKey>('medium')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -231,7 +235,7 @@ export default function PenaltyGame() {
                 gameRef.current = null
               }
               setXpResult(null)
-              setScreen('jersey')
+              setScreen(initialKit ? 'difficulty' : 'jersey')
             }}
           />
         </div>
