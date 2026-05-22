@@ -1,5 +1,6 @@
 import { Zone, Height, ShotRecord, coordToZone, coordToHeight } from '../types'
 import { NeuralNetwork } from './NeuralNetwork'
+import { PlayerProfiler } from './PlayerProfiler'
 
 type ShotType = `${Zone}-${Height}`
 const ZONES: Zone[] = ['left', 'centre', 'right']
@@ -9,14 +10,12 @@ const SHOT_TYPES: ShotType[] = ZONES.flatMap(z => HEIGHTS.map(h => `${z}-${h}` a
 // Canonical center of each zone in normalized goal coordinates
 const ZONE_X: Record<Zone, number>   = { left: 1 / 6, centre: 1 / 2, right: 5 / 6 }
 const HEIGHT_Y: Record<Height, number> = { top: 1 / 4, bottom: 3 / 4 }
-const BW_X = 0.20   // horizontal kernel bandwidth (20% of goal width)
-const BW_Y = 0.25   // vertical kernel bandwidth   (25% of goal height)
 
 // Gaussian kernel: how strongly does a shot at (sx, sy) activate a given zone?
-function shotKernel(sx: number, sy: number, type: ShotType): number {
+function shotKernel(sx: number, sy: number, type: ShotType, bwX: number, bwY: number): number {
   const [zone, height] = type.split('-') as [Zone, Height]
-  const dx = (sx - ZONE_X[zone])   / BW_X
-  const dy = (sy - HEIGHT_Y[height]) / BW_Y
+  const dx = (sx - ZONE_X[zone])    / bwX
+  const dy = (sy - HEIGHT_Y[height]) / bwY
   return Math.exp(-(dx * dx + dy * dy) / 2)
 }
 
@@ -24,13 +23,14 @@ export class KeeperAI {
   private history: ShotRecord[] = []
   private readonly DECAY = 0.85
   private readonly STORAGE_KEY = 'pblitz-keeper-history'
-  private readonly MAX_PERSISTENT = 8
+  private readonly MAX_PERSISTENT = 25
   private resultBoosts: Partial<Record<ShotType, number>> = {}
   private populationClusters: { x: number; y: number; weight: number }[] = []
   private populationTransitions: Partial<Record<ShotType, Partial<Record<ShotType, number>>>> = {}
   private populationTotal = 0
   private nn = new NeuralNetwork()
   private nnTrained = false
+  private profiler = new PlayerProfiler()
   readonly playerId: string
 
   constructor() {
@@ -121,6 +121,8 @@ export class KeeperAI {
       if (toIdx !== -1) this.nn.train(prev.x, prev.y, toIdx, 0.005)
     }
     this.history.push({ x, y, power })
+    const zone = this.dominantType(x, y)
+    this.profiler.record(zone, false)
     this.savePersistent()
   }
 
@@ -146,14 +148,36 @@ export class KeeperAI {
     }).catch(() => {})
   }
 
+  private getBandwidths(): { bwX: number; bwY: number } {
+    const n = Math.max(this.history.length, 1)
+    const xs = this.history.map(s => s.x)
+    const ys = this.history.map(s => s.y)
+    const meanX = xs.reduce((a, b) => a + b, 0) / n
+    const meanY = ys.reduce((a, b) => a + b, 0) / n
+    const stdX = n > 1
+      ? Math.sqrt(xs.reduce((a, x) => a + (x - meanX) ** 2, 0) / (n - 1))
+      : 0.20
+    const stdY = n > 1
+      ? Math.sqrt(ys.reduce((a, y) => a + (y - meanY) ** 2, 0) / (n - 1))
+      : 0.25
+    const scale = 1.06 * Math.pow(n, -0.2)
+    return {
+      bwX: Math.max(0.08, Math.min(0.30, (stdX || 0.20) * scale)),
+      bwY: Math.max(0.10, Math.min(0.35, (stdY || 0.25) * scale)),
+    }
+  }
+
   // Which zone does this coordinate most strongly belong to?
   private dominantType(x: number, y: number): ShotType {
+    const { bwX, bwY } = this.getBandwidths()
     return SHOT_TYPES.reduce((best, t) =>
-      shotKernel(x, y, t) > shotKernel(x, y, best) ? t : best
+      shotKernel(x, y, t, bwX, bwY) > shotKernel(x, y, best, bwX, bwY) ? t : best
     , SHOT_TYPES[0])
   }
 
   private getJointWeights(): Record<ShotType, number> {
+    const { bwX, bwY } = this.getBandwidths()
+
     // Laplace prior (uniform baseline)
     const counts = Object.fromEntries(SHOT_TYPES.map(t => [t, 1])) as Record<ShotType, number>
 
@@ -162,7 +186,7 @@ export class KeeperAI {
     const popScale = this.populationTotal > 0 ? 8 / this.populationTotal : 0
     for (const { x, y, weight } of this.populationClusters) {
       for (const t of SHOT_TYPES) {
-        counts[t] += weight * popScale * shotKernel(x, y, t)
+        counts[t] += weight * popScale * shotKernel(x, y, t, bwX, bwY)
       }
     }
 
@@ -173,8 +197,30 @@ export class KeeperAI {
       const recency = Math.pow(this.DECAY, n - 1 - i)
       for (const t of SHOT_TYPES) {
         const boost = 1 + 0.5 * (this.resultBoosts[t] ?? 0)
-        counts[t] += recency * shotKernel(x, y, t) * boost
+        counts[t] += recency * shotKernel(x, y, t, bwX, bwY) * boost
       }
+    }
+
+    // Power-aware zone weights
+    const lastPower = this.history.at(-1)?.power ?? 50
+    if (lastPower > 75) {
+      counts['centre-bottom'] *= 0.6
+      counts['centre-top']    *= 0.7
+      counts['left-top']      *= 1.3
+      counts['right-top']     *= 1.3
+    }
+    if (lastPower < 35) {
+      counts['left-top']      *= 0.7
+      counts['right-top']     *= 0.7
+      counts['centre-bottom'] *= 1.3
+    }
+
+    // Profiler boosts
+    const lastZone = this.history.length > 1
+      ? this.dominantType(this.history.at(-2)!.x, this.history.at(-2)!.y)
+      : null
+    for (const t of SHOT_TYPES) {
+      counts[t] *= this.profiler.getZoneBoost(t, lastZone, false)
     }
 
     const total = SHOT_TYPES.reduce((s, t) => s + counts[t], 0)
@@ -206,15 +252,29 @@ export class KeeperAI {
 
     if (realTransitions === 0 && !globalFrom) return null
 
+    // 2nd-order Markov
+    if (n >= 4) {
+      const prev2Type = this.dominantType(this.history[n - 2].x, this.history[n - 2].y)
+      const sig = `${prev2Type}|${lastType}`
+      for (let i = 0; i < n - 2; i++) {
+        const s = `${this.dominantType(this.history[i].x, this.history[i].y)}|${this.dominantType(this.history[i + 1].x, this.history[i + 1].y)}`
+        if (s === sig) {
+          const to = this.dominantType(this.history[i + 2].x, this.history[i + 2].y)
+          counts[to] += Math.pow(this.DECAY, n - 3 - i) * 0.5
+        }
+      }
+    }
+
     const total = SHOT_TYPES.reduce((s, t) => s + counts[t], 0)
     return Object.fromEntries(SHOT_TYPES.map(t => [t, (counts[t] / total) * 100])) as Record<ShotType, number>
   }
 
   private predictCoordinate(chosenType: ShotType): { x: number; y: number } {
+    const { bwX, bwY } = this.getBandwidths()
     let wx = 0, wy = 0, w = 0
     const popScale = this.populationTotal > 0 ? 30 / this.populationTotal : 0
     for (const cluster of this.populationClusters) {
-      const kw = shotKernel(cluster.x, cluster.y, chosenType) * cluster.weight * popScale
+      const kw = shotKernel(cluster.x, cluster.y, chosenType, bwX, bwY) * cluster.weight * popScale
       wx += cluster.x * kw
       wy += cluster.y * kw
       w += kw
@@ -223,7 +283,7 @@ export class KeeperAI {
     for (let i = 0; i < n; i++) {
       const { x, y } = this.history[i]
       const recency = Math.pow(this.DECAY, n - 1 - i)
-      const kw = recency * shotKernel(x, y, chosenType)
+      const kw = recency * shotKernel(x, y, chosenType, bwX, bwY)
       wx += x * kw
       wy += y * kw
       w += kw
@@ -236,7 +296,7 @@ export class KeeperAI {
     return { x: Math.max(0, Math.min(1, rx)), y: Math.max(0, Math.min(1, ry)) }
   }
 
-  predictShot(): { zone: Zone; height: Height; x: number; y: number } {
+  predictShot(aiWeight = 0.60): { zone: Zone; height: Height; x: number; y: number } {
     const freq   = this.getJointWeights()
     const markov = this.getMarkovWeights()
     const nn     = this.getNNWeights()
@@ -246,12 +306,15 @@ export class KeeperAI {
     const nnBlend     = nn ? (this.nnTrained ? 0.15 : 0) + Math.min(0.25, n * 0.05) : 0
     const freqBlend   = Math.max(0, 1 - markovBlend - nnBlend)
 
+    const uniform = 100 / SHOT_TYPES.length
     const weights = Object.fromEntries(
       SHOT_TYPES.map(t => [
         t,
-        freqBlend   * freq[t] +
-        markovBlend * (markov?.[t] ?? freq[t]) +
-        nnBlend     * (nn?.[t]     ?? freq[t]),
+        aiWeight * (
+          freqBlend   * freq[t] +
+          markovBlend * (markov?.[t] ?? freq[t]) +
+          nnBlend     * (nn?.[t]     ?? freq[t])
+        ) + (1 - aiWeight) * uniform,
       ])
     ) as Record<ShotType, number>
 
