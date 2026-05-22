@@ -2,6 +2,7 @@ import * as Phaser from 'phaser'
 import { Kit, Zone, Height } from '../types'
 import { KeeperAI } from '../ai/KeeperAI'
 import { drawCharacter, drawBall, POSES, CharacterPose } from '../CharacterRenderer'
+import { DifficultyConfig, DIFFICULTY } from '../difficulty'
 
 type GamePhase =
   | 'intro'
@@ -87,6 +88,7 @@ export default class GameScene extends Phaser.Scene {
 
   // UI text
   private aimIndicator!: Phaser.GameObjects.Graphics
+  private composureRing!: Phaser.GameObjects.Graphics
   private powerBarBg!: Phaser.GameObjects.Graphics
   private powerBarFill!: Phaser.GameObjects.Graphics
   private scoreText!: Phaser.GameObjects.Text
@@ -97,17 +99,26 @@ export default class GameScene extends Phaser.Scene {
 
   private onGameOver?: (playerScore: number, totalRounds: number) => void
 
+  private difficultyConfig: DifficultyConfig = DIFFICULTY['medium']
+  private keeperLeanOffset = 0
+  private composureRingRadius = 0
+  private composureRingActive = false
+  private composureAccuracy = 1.0
+
   constructor() {
     super({ key: 'GameScene' })
   }
 
-  init(data: { playerKit: Kit; keeperKit: Kit; onGameOver?: (p: number, c: number) => void }) {
+  init(data: { playerKit: Kit; keeperKit: Kit; onGameOver?: (p: number, c: number) => void; difficultyConfig?: DifficultyConfig }) {
     this.playerKit = data.playerKit
     this.keeperKit = data.keeperKit
     this.onGameOver = data.onGameOver
     this.ai = new KeeperAI()
     this.playerScore = 0
     this.round = 1
+    if (data.difficultyConfig) {
+      this.difficultyConfig = data.difficultyConfig
+    }
   }
 
   create() {
@@ -137,6 +148,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Aim indicator
     this.aimIndicator = this.add.graphics().setDepth(10)
+    this.composureRing = this.add.graphics().setDepth(11)
 
     // Power bar
     this.powerBarBg = this.add.graphics().setDepth(10)
@@ -213,6 +225,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private lockAim() {
+    this.powerSpeed = 1.8 * this.difficultyConfig.powerSpeed
+
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
     const relX = this.aimX - this.GOAL_LEFT
     if (relX < zoneWidth) this.lockedZone = 'left'
@@ -231,12 +245,37 @@ export default class GameScene extends Phaser.Scene {
     this.power = 0
     this.powerDir = 1
     this.instructText.setText('SPACE to set power!')
+
+    // Start composure ring — shrinks from 80 to 0 over 2.5s
+    this.composureRingRadius = 80
+    this.composureRingActive = true
+    this.composureAccuracy = 0.5
+    this.tweens.add({
+      targets: this,
+      composureRingRadius: 0,
+      duration: 2500,
+      ease: 'Quad.easeIn',
+      onUpdate: () => {
+        this.composureAccuracy = 0.4 + 0.6 * (1 - this.composureRingRadius / 80)
+      },
+      onComplete: () => {
+        this.composureRingActive = false
+      },
+    })
   }
 
   private lockPower() {
+    // Cancel composure ring tween
+    this.tweens.killTweensOf(this)
+    this.composureRingActive = false
+
     this.lockedPower = this.power
 
-    this.ai.predictShot()  // update NN confidence / drift model
+    // Composure accuracy: 1.0 = perfect, 0.4 = worst
+    // Low composure → shot drifts further from aim point
+    const inaccuracy = (1 - this.composureAccuracy) * 0.15
+
+    this.ai.predictShot(this.difficultyConfig.aiWeight)  // update NN confidence / drift model
     this.keeperDiveDir    = this.lockedZone
     this.keeperDiveHeight = this.lockedHeight
     // Keeper reads aim with small imperfection (±4% of goal width)
@@ -251,10 +290,11 @@ export default class GameScene extends Phaser.Scene {
       right:  this.GOAL_LEFT + zoneWidth * 2.5,
     }
 
-    this.ballTargetX = zoneX[this.lockedZone] + (Math.random() - 0.5) * 20
+    this.ballTargetX = zoneX[this.lockedZone] + (Math.random() - 0.5) * 20 * (1 + inaccuracy * 3)
+    const scatter = 30 * (1 + inaccuracy * 2)
     this.ballTargetY = this.lockedHeight === 'top'
-      ? this.GOAL_Y_TOP    + 20 + Math.random() * 30
-      : this.GOAL_Y_BOTTOM - 20 - Math.random() * 30
+      ? this.GOAL_Y_TOP    + 20 + Math.random() * scatter
+      : this.GOAL_Y_BOTTOM - 20 - Math.random() * scatter
 
     const isMiss = this.lockedPower < 5 || this.lockedPower > 95
     if (isMiss) {
@@ -407,6 +447,15 @@ export default class GameScene extends Phaser.Scene {
       } else if (this.cursors.down.isDown) {
         this.aimY = Math.min(this.GOAL_Y_BOTTOM - 15, this.aimY + 3)
       }
+
+      // Keeper leans based on AI prediction confidence
+      const prediction = this.ai.predictShot(this.difficultyConfig.aiWeight)
+      const confidence = this.ai.getConfidence()
+      const leanMax = this.difficultyConfig.key === 'easy' ? 0
+        : this.difficultyConfig.key === 'medium' ? 20
+        : 40
+      const leanDir = prediction.zone === 'left' ? -1 : prediction.zone === 'right' ? 1 : 0
+      this.keeperLeanOffset = leanDir * leanMax * confidence
     }
 
     if (this.phase === 'power') {
@@ -497,6 +546,11 @@ export default class GameScene extends Phaser.Scene {
     if (this.phase === 'player_idle' || this.phase === 'aiming' || this.phase === 'power') {
       this.keeperPose = POSES.keeperIdle(this.tick)
       this.playerPose = POSES.idle()
+      if (this.phase === 'aiming') {
+        this.keeperOffset = this.keeperLeanOffset
+      } else {
+        this.keeperOffset = 0
+      }
     }
 
     this.renderFrame(W, H)
@@ -532,6 +586,17 @@ export default class GameScene extends Phaser.Scene {
       this.aimIndicator.lineStyle(1, 0xFFFF00, 0.5)
       this.aimIndicator.lineBetween(this.aimX, this.aimY - 18, this.aimX, this.aimY + 18)
       this.aimIndicator.lineBetween(this.aimX - 18, this.aimY, this.aimX + 18, this.aimY)
+    }
+
+    // Composure ring
+    this.composureRing.clear()
+    if (this.composureRingActive && this.phase === 'power') {
+      const r = this.composureRingRadius
+      const isSweet = r < 14
+      const color = isSweet ? 0x00ff44 : 0xffffff
+      const alpha = 0.7
+      this.composureRing.lineStyle(2, color, alpha)
+      this.composureRing.strokeCircle(this.aimX, this.aimY, r)
     }
 
     // Power bar
