@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { SessionProvider } from '@/components/SessionProvider'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -8,7 +9,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Penalty Shootout',
+  title: 'Penalty Blitz',
   description: 'Penalty shootout football game',
 }
 
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </svg>
           <p>ROTATE DEVICE</p>
         </div>
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           try {
             screen.orientation.lock('landscape').catch(function(){});
