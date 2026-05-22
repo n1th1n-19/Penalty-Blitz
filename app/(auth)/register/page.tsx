@@ -47,7 +47,7 @@ export default function RegisterPage() {
       password: form.password,
       redirect: false,
     })
-    router.push('/game')
+    router.push('/main')
   }
 
   return (
