@@ -5,8 +5,10 @@ import { Kit } from '../../lib/game/types'
 import { CLUB_KITS } from '../../lib/game/kits'
 import JerseySelect from './JerseySelect'
 import ResultScreen from './ResultScreen'
+import DifficultySelect from './DifficultySelect'
+import { DifficultyKey, DifficultyConfig, DIFFICULTY } from '@/lib/game/difficulty'
 
-type Screen = 'jersey' | 'game' | 'result'
+type Screen = 'jersey' | 'difficulty' | 'game' | 'result'
 
 // Auto-generate a contrasting keeper kit
 function getKeeperKit(playerKit: Kit): Kit {
@@ -34,9 +36,18 @@ export default function PenaltyGame() {
   const [screen, setScreen] = useState<Screen>('jersey')
   const [playerKit, setPlayerKit] = useState<Kit>(CLUB_KITS[0])
   const [finalScore, setFinalScore] = useState({ player: 0, cpu: 0 })
+  const [difficulty, setDifficulty] = useState<DifficultyKey>('medium')
+  const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['medium'])
 
   const startGame = async (kit: Kit) => {
     setPlayerKit(kit)
+    setScreen('difficulty')
+  }
+
+  const handleDifficultySelect = async (key: DifficultyKey) => {
+    const config = DIFFICULTY[key]
+    setDifficulty(key)
+    setDifficultyConfig(config)
     setScreen('game')
 
     // Dynamically import Phaser (client only)
@@ -55,6 +66,7 @@ export default function PenaltyGame() {
     const W = window.innerWidth
     const H = window.innerHeight
 
+    const kit = playerKit
     const keeperKit = getKeeperKit(kit)
 
     const game = new Phaser.Game({
@@ -75,6 +87,8 @@ export default function PenaltyGame() {
             gameScene.scene.start('GameScene', {
               playerKit: kit,
               keeperKit,
+              difficulty: key,
+              difficultyConfig: config,
               onGameOver: (p: number, c: number) => {
                 setFinalScore({ player: p, cpu: c })
                 setTimeout(() => setScreen('result'), 1000)
@@ -105,6 +119,12 @@ export default function PenaltyGame() {
       {screen === 'jersey' && (
         <div style={{ width: '100%', height: '100%' }}>
           <JerseySelect onSelect={startGame} />
+        </div>
+      )}
+
+      {screen === 'difficulty' && (
+        <div style={{ width: '100%', height: '100%' }}>
+          <DifficultySelect onSelect={handleDifficultySelect} />
         </div>
       )}
 
