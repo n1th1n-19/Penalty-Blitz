@@ -8,17 +8,44 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String
+  username        String   @unique
+  xp              Int      @default(0)
+  level           Int      @default(1)
+  avatarKitId     String?
+  hasSeenTutorial Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  scores          Score[]
+  shots           Shot[]
+}
+
+model Score {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  goalsScored Int
+  totalShots  Int      @default(5)
+  difficulty  String
+  xpEarned    Int
+  createdAt   DateTime @default(now())
+}
+
 model Shot {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  playerId  String   @map("player_id")
+  id        String   @id @default(uuid())
+  playerId  String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
   x         Float
   y         Float
   power     Int
   scored    Boolean
-  prevX     Float?   @map("prev_x")
-  prevY     Float?   @map("prev_y")
-  createdAt DateTime @default(now()) @map("created_at")
+  prevX     Float?
+  prevY     Float?
+  createdAt DateTime @default(now())
 
   @@index([playerId])
-  @@map("shots")
+  @@index([userId])
 }
