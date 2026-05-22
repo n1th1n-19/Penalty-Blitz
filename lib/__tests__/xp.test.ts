@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateXp, calculateLevel, xpForNextLevel } from '../xp'
+import { calculateXp, calculateLevel, xpForNextLevel, xpBreakdown } from '../xp'
 
 describe('calculateXp', () => {
   it('awards 10 XP per goal on easy', () => {
@@ -31,5 +31,17 @@ describe('xpForNextLevel', () => {
   })
   it('needs 250 XP total to reach level 3', () => {
     expect(xpForNextLevel(2)).toBe(250)
+  })
+})
+
+describe('xpBreakdown', () => {
+  it('returns correct breakdown for easy non-perfect game', () => {
+    expect(xpBreakdown(3, 'easy')).toEqual({ goalXp: 30, bonusXp: 0, totalXp: 30, multiplier: 1 })
+  })
+  it('returns correct breakdown for hard perfect game', () => {
+    expect(xpBreakdown(5, 'hard')).toEqual({ goalXp: 125, bonusXp: 50, totalXp: 175, multiplier: 2.5 })
+  })
+  it('returns multiplier 1.5 for medium', () => {
+    expect(xpBreakdown(1, 'medium').multiplier).toBe(1.5)
   })
 })
