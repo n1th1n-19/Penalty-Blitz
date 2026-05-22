@@ -93,8 +93,8 @@ export default async function ProfilePage({ params }: PageProps) {
               </tr>
             </thead>
             <tbody>
-              {data.recentGames.map((g, i) => (
-                <tr key={g.createdAt ?? i} className="border-b last:border-0">
+              {data.recentGames.map((g) => (
+                <tr key={g.createdAt} className="border-b last:border-0">
                   <td className="py-2 text-gray-600">
                     {new Date(g.createdAt).toLocaleDateString()}
                   </td>
