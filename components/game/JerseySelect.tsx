@@ -102,15 +102,15 @@ export default function JerseySelect({ onSelect }: Props) {
       </div>
 
       {/* Kit grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
-        gap: 10,
-        width: '100%',
-        maxWidth: 'min(560px, 100%)',
-        padding: '0 16px',
-        marginBottom: 24,
-      }}>
+      <div
+        className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3"
+        style={{
+          width: '100%',
+          maxWidth: 'min(560px, 100%)',
+          padding: '0 16px',
+          marginBottom: 24,
+        }}
+      >
         {kits.map(kit => (
           <KitCard
             key={kit.id}

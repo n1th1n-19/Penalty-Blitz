@@ -6,6 +6,7 @@ import { CLUB_KITS } from '../../lib/game/kits'
 import JerseySelect from './JerseySelect'
 import ResultScreen from './ResultScreen'
 import DifficultySelect from './DifficultySelect'
+import SettingsModal from './SettingsModal'
 import { DifficultyKey, DifficultyConfig, DIFFICULTY } from '@/lib/game/difficulty'
 import { useSession } from 'next-auth/react'
 import { createTutorial } from '@/lib/game/tutorial'
@@ -39,6 +40,7 @@ export default function PenaltyGame() {
   const [playerKit, setPlayerKit] = useState<Kit>(CLUB_KITS[0])
   const [finalScore, setFinalScore] = useState({ player: 0, cpu: 0 })
   const [difficulty, setDifficulty] = useState<DifficultyKey>('medium')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['medium'])
   const { data: session } = useSession()
   const tutorialFiredRef = useRef(false)
@@ -149,10 +151,30 @@ export default function PenaltyGame() {
       )}
 
       {screen === 'game' && (
-        <div
-          ref={containerRef}
-          style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        />
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <div
+            ref={containerRef}
+            style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          />
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="absolute top-3 right-3 z-10 bg-white bg-opacity-20 text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-opacity-30"
+          >
+            SETTINGS
+          </button>
+          <SettingsModal
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            defaultDifficulty={difficulty}
+            onDifficultyChange={(k) => setDifficulty(k)}
+            onReplayTutorial={() => {
+              setSettingsOpen(false)
+              const t = createTutorial(() => {})
+              t.drive()
+            }}
+          />
+        </div>
       )}
 
       {screen === 'result' && (
