@@ -27,8 +27,9 @@ interface PageProps {
 }
 
 export default async function ProfilePage({ params }: PageProps) {
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
   const res = await fetch(
-    `${process.env.NEXTAUTH_URL}/api/profile/${params.username}`,
+    `${baseUrl}/api/profile/${encodeURIComponent(params.username)}`,
     { cache: 'no-store' }
   )
 
@@ -93,7 +94,7 @@ export default async function ProfilePage({ params }: PageProps) {
             </thead>
             <tbody>
               {data.recentGames.map((g, i) => (
-                <tr key={i} className="border-b last:border-0">
+                <tr key={g.createdAt ?? i} className="border-b last:border-0">
                   <td className="py-2 text-gray-600">
                     {new Date(g.createdAt).toLocaleDateString()}
                   </td>

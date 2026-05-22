@@ -11,7 +11,8 @@ interface XpBarProps {
 export default function XpBar({ xp, level }: XpBarProps) {
   const nextThreshold = xpForNextLevel(level)
   const prevThreshold = level <= 1 ? 0 : xpForNextLevel(level - 1)
-  const progress = Math.min(1, (xp - prevThreshold) / (nextThreshold - prevThreshold))
+  const denom = nextThreshold - prevThreshold
+  const progress = denom > 0 ? Math.max(0, Math.min(1, (xp - prevThreshold) / denom)) : 0
 
   const [width, setWidth] = useState(0)
 
