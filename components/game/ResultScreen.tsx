@@ -1,14 +1,27 @@
 'use client'
 import { Kit } from '../../lib/game/types'
+import XpBar from '@/components/profile/XpBar'
+
+interface XpResultData {
+  goalXp: number
+  bonusXp: number
+  totalXp: number
+  multiplier: number
+  xpEarned: number
+  newTotalXp: number
+  newLevel: number
+  leveledUp: boolean
+}
 
 interface Props {
   playerScore: number
   cpuScore: number
   playerKit: Kit
+  xpResult?: XpResultData | null
   onRestart: () => void
 }
 
-export default function ResultScreen({ playerScore, cpuScore: totalRounds, playerKit, onRestart }: Props) {
+export default function ResultScreen({ playerScore, cpuScore: totalRounds, playerKit, xpResult, onRestart }: Props) {
   const ratio = playerScore / totalRounds
 
   const rating =
@@ -78,6 +91,27 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
       <p style={{ fontSize: 13, color: '#4a6a4a', maxWidth: 300, textAlign: 'center' }}>
         {comment}
       </p>
+
+      {xpResult && (
+        <div className="mt-6 border-t border-white border-opacity-20 pt-5 space-y-2 text-center">
+          <p className="text-green-200 text-sm font-bold tracking-widest">XP EARNED</p>
+          <p className="text-white text-sm">
+            {playerScore} goals x {xpResult.multiplier} = +{xpResult.goalXp} XP
+          </p>
+          {xpResult.bonusXp > 0 && (
+            <p className="text-yellow-300 text-sm font-bold">PERFECT GAME BONUS +{xpResult.bonusXp} XP</p>
+          )}
+          <p className="text-white font-black text-xl mt-1">+{xpResult.totalXp} XP TOTAL</p>
+          {xpResult.leveledUp && (
+            <p className="text-yellow-300 font-black text-2xl animate-pulse">
+              LEVEL UP - LEVEL {xpResult.newLevel}
+            </p>
+          )}
+          <div className="mt-3">
+            <XpBar xp={xpResult.newTotalXp} level={xpResult.newLevel} />
+          </div>
+        </div>
+      )}
 
       <button
         onClick={onRestart}

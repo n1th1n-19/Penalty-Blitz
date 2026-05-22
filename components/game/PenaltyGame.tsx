@@ -10,8 +10,20 @@ import SettingsModal from './SettingsModal'
 import { DifficultyKey, DifficultyConfig, DIFFICULTY } from '@/lib/game/difficulty'
 import { useSession } from 'next-auth/react'
 import { createTutorial } from '@/lib/game/tutorial'
+import { xpBreakdown, type Difficulty } from '@/lib/xp'
 
 type Screen = 'jersey' | 'difficulty' | 'game' | 'result'
+
+interface XpResultData {
+  goalXp: number
+  bonusXp: number
+  totalXp: number
+  multiplier: number
+  xpEarned: number
+  newTotalXp: number
+  newLevel: number
+  leveledUp: boolean
+}
 
 // Auto-generate a contrasting keeper kit
 function getKeeperKit(playerKit: Kit): Kit {
@@ -42,6 +54,7 @@ export default function PenaltyGame() {
   const [difficulty, setDifficulty] = useState<DifficultyKey>('medium')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['medium'])
+  const [xpResult, setXpResult] = useState<XpResultData | null>(null)
   const { data: session } = useSession()
   const tutorialFiredRef = useRef(false)
 
@@ -95,8 +108,36 @@ export default function PenaltyGame() {
               keeperKit,
               difficulty: key,
               difficultyConfig: config,
-              onGameOver: (p: number, c: number) => {
+              onGameOver: async (p: number, c: number) => {
                 setFinalScore({ player: p, cpu: c })
+
+                if (session?.user?.id) {
+                  try {
+                    const res = await fetch('/api/scores', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ goalsScored: p, difficulty: key }),
+                    })
+                    if (res.ok) {
+                      const apiData = await res.json()
+                      const breakdown = xpBreakdown(p, key as Difficulty)
+                      setXpResult({
+                        ...breakdown,
+                        xpEarned:   apiData.xpEarned,
+                        newTotalXp: apiData.totalXp,
+                        newLevel:   apiData.newLevel,
+                        leveledUp:  apiData.leveledUp,
+                      })
+                    } else {
+                      setXpResult(null)
+                    }
+                  } catch {
+                    setXpResult(null)
+                  }
+                } else {
+                  setXpResult(null)
+                }
+
                 setTimeout(() => setScreen('result'), 1000)
               },
             })
@@ -183,11 +224,13 @@ export default function PenaltyGame() {
             playerScore={finalScore.player}
             cpuScore={finalScore.cpu}
             playerKit={playerKit}
+            xpResult={xpResult}
             onRestart={() => {
               if (gameRef.current) {
                 gameRef.current.destroy(true)
                 gameRef.current = null
               }
+              setXpResult(null)
               setScreen('jersey')
             }}
           />
