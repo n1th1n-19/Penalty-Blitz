@@ -11,41 +11,46 @@ datasource db {
 model User {
   id              String   @id @default(uuid())
   email           String   @unique
-  passwordHash    String
+  passwordHash    String   @map("password_hash")
   username        String   @unique
   xp              Int      @default(0)
   level           Int      @default(1)
-  avatarKitId     String?
-  hasSeenTutorial Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  avatarKitId     String?  @map("avatar_kit_id")
+  hasSeenTutorial Boolean  @default(false) @map("has_seen_tutorial")
+  createdAt       DateTime @default(now()) @map("created_at")
   scores          Score[]
   shots           Shot[]
+
+  @@map("users")
 }
 
 model Score {
   id          String   @id @default(uuid())
-  userId      String
+  userId      String   @map("user_id")
   user        User     @relation(fields: [userId], references: [id])
-  goalsScored Int
-  totalShots  Int      @default(5)
+  goalsScored Int      @map("goals_scored")
+  totalShots  Int      @default(5) @map("total_shots")
   difficulty  String
-  xpEarned    Int
-  createdAt   DateTime @default(now())
+  xpEarned    Int      @map("xp_earned")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("scores")
 }
 
 model Shot {
   id        String   @id @default(uuid())
-  playerId  String
-  userId    String?
+  playerId  String   @map("player_id")
+  userId    String?  @map("user_id")
   user      User?    @relation(fields: [userId], references: [id])
   x         Float
   y         Float
   power     Int
   scored    Boolean
-  prevX     Float?
-  prevY     Float?
-  createdAt DateTime @default(now())
+  prevX     Float?   @map("prev_x")
+  prevY     Float?   @map("prev_y")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([playerId])
   @@index([userId])
+  @@map("shots")
 }
