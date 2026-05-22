@@ -7,6 +7,8 @@ import JerseySelect from './JerseySelect'
 import ResultScreen from './ResultScreen'
 import DifficultySelect from './DifficultySelect'
 import { DifficultyKey, DifficultyConfig, DIFFICULTY } from '@/lib/game/difficulty'
+import { useSession } from 'next-auth/react'
+import { createTutorial } from '@/lib/game/tutorial'
 
 type Screen = 'jersey' | 'difficulty' | 'game' | 'result'
 
@@ -38,6 +40,8 @@ export default function PenaltyGame() {
   const [finalScore, setFinalScore] = useState({ player: 0, cpu: 0 })
   const [difficulty, setDifficulty] = useState<DifficultyKey>('medium')
   const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['medium'])
+  const { data: session } = useSession()
+  const tutorialFiredRef = useRef(false)
 
   const startGame = async (kit: Kit) => {
     setPlayerKit(kit)
@@ -113,6 +117,22 @@ export default function PenaltyGame() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (screen !== 'game') return
+    if (session?.user?.hasSeenTutorial) return
+    if (tutorialFiredRef.current) return
+    tutorialFiredRef.current = true
+
+    const timer = setTimeout(() => {
+      const t = createTutorial(() => {
+        fetch('/api/auth/tutorial-seen', { method: 'PATCH' }).catch(() => {})
+      })
+      t.drive()
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [screen, session?.user?.hasSeenTutorial])
 
   return (
     <div style={{ width: '100%', height: '100dvh', background: '#0a0f0a', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

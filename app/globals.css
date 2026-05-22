@@ -55,3 +55,25 @@ html, body {
   width: 100%;
   height: 100%;
 }
+
+.pblitz-tutorial .driver-popover-title {
+  font-family: 'Arial Black', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: #14532d;
+}
+.pblitz-tutorial .driver-popover-description {
+  font-size: 13px;
+  color: #374151;
+}
+.pblitz-tutorial .driver-popover-next-btn {
+  background: #15803d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.pblitz-tutorial .driver-popover-prev-btn {
+  border-radius: 6px;
+  font-weight: 600;
+}
