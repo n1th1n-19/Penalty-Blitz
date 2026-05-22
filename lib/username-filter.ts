@@ -7,7 +7,7 @@ const RESERVED = new Set([
   'penalty_blitz', 'penaltyblitz', 'staff', 'system', 'bot',
 ])
 
-const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
+const USERNAME_REGEX = /^[a-zA-Z0-9_]+$/
 
 export enum UsernameError {
   TOO_SHORT     = 'TOO_SHORT',
@@ -22,11 +22,12 @@ export type UsernameResult =
   | { ok: false; error: UsernameError }
 
 export function validateUsername(username: string): UsernameResult {
-  if (username.length < 3)  return { ok: false, error: UsernameError.TOO_SHORT }
-  if (username.length > 20) return { ok: false, error: UsernameError.TOO_LONG }
-  if (!USERNAME_REGEX.test(username)) return { ok: false, error: UsernameError.INVALID_CHARS }
-  if (RESERVED.has(username.toLowerCase())) return { ok: false, error: UsernameError.RESERVED }
-  if (filter.isProfane(username)) return { ok: false, error: UsernameError.PROFANITY }
+  const trimmed = username.trim()
+  if (trimmed.length < 3)  return { ok: false, error: UsernameError.TOO_SHORT }
+  if (trimmed.length > 20) return { ok: false, error: UsernameError.TOO_LONG }
+  if (!USERNAME_REGEX.test(trimmed)) return { ok: false, error: UsernameError.INVALID_CHARS }
+  if (RESERVED.has(trimmed.toLowerCase())) return { ok: false, error: UsernameError.RESERVED }
+  if (filter.isProfane(trimmed)) return { ok: false, error: UsernameError.PROFANITY }
   return { ok: true }
 }
 

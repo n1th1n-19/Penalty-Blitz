@@ -29,4 +29,12 @@ describe('validateUsername', () => {
     expect(result.ok).toBe(false)
     expect(result.error).toBe(UsernameError.PROFANITY)
   })
+
+  it('accepts username at minimum length (3 chars)', () => {
+    expect(validateUsername('abc')).toEqual({ ok: true })
+  })
+
+  it('accepts username at maximum length (20 chars)', () => {
+    expect(validateUsername('a'.repeat(20))).toEqual({ ok: true })
+  })
 })
