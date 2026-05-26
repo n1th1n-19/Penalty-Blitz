@@ -3,6 +3,7 @@ import { Kit, Zone, Height } from '../types'
 import { KeeperAI } from '../ai/KeeperAI'
 import { drawCharacter, drawBall, POSES, CharacterPose } from '../CharacterRenderer'
 import { DifficultyConfig, DIFFICULTY } from '../difficulty'
+import { ControlScheme, getControlScheme } from '../mobile-controls'
 import { audio } from '../audio'
 
 type GamePhase =
@@ -101,6 +102,7 @@ export default class GameScene extends Phaser.Scene {
   private onGameOver?: (playerScore: number, totalRounds: number) => void
 
   private difficultyConfig: DifficultyConfig = DIFFICULTY['medium']
+  private controlScheme: ControlScheme = 'drag'
   private keeperLeanOffset = 0
   private composureRingRadius = 0
   private composureRingActive = false
@@ -120,6 +122,15 @@ export default class GameScene extends Phaser.Scene {
     if (data.difficultyConfig) {
       this.difficultyConfig = data.difficultyConfig
     }
+    this.controlScheme = getControlScheme()
+  }
+
+  setDifficultyConfig(config: DifficultyConfig) {
+    this.difficultyConfig = config
+  }
+
+  setControlScheme(scheme: ControlScheme) {
+    this.controlScheme = scheme
   }
 
   create() {
@@ -230,6 +241,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private handlePointerMove = (pointer: Phaser.Input.Pointer) => {
+    if (this.controlScheme === 'tap') return
     if (this.phase === 'aiming') {
       this.aimX = Phaser.Math.Clamp(pointer.x, this.GOAL_LEFT + 10, this.GOAL_RIGHT - 10)
       this.aimY = Phaser.Math.Clamp(pointer.y, this.GOAL_Y_TOP + 15, this.GOAL_Y_BOTTOM - 15)

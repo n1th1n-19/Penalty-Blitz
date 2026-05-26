@@ -9,11 +9,12 @@ interface Props {
   onClose:            () => void
   defaultDifficulty:  DifficultyKey
   onDifficultyChange: (k: DifficultyKey) => void
+  onControlsChange?:  (s: ControlScheme) => void
   onReplayTutorial:   () => void
 }
 
 export default function SettingsModal({
-  open, onClose, defaultDifficulty, onDifficultyChange, onReplayTutorial,
+  open, onClose, defaultDifficulty, onDifficultyChange, onControlsChange, onReplayTutorial,
 }: Props) {
   const [muted, setMuted]   = useState(() => audio.isMuted())
   const [scheme, setScheme] = useState<ControlScheme>(() => getControlScheme())
@@ -27,7 +28,9 @@ export default function SettingsModal({
   }
 
   const handleScheme = (s: ControlScheme) => {
-    setControlScheme(s); setScheme(s)
+    setControlScheme(s)
+    setScheme(s)
+    onControlsChange?.(s)
   }
 
   const handleDiff = (k: DifficultyKey) => {
