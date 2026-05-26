@@ -205,8 +205,9 @@ export default class GameScene extends Phaser.Scene {
 
     // Input
     this.cursors = this.input.keyboard!.createCursorKeys()
-    this.input.on('pointerdown', this.handleTap, this)
-    this.input.keyboard?.on('keydown-SPACE', this.handleTap, this)
+    this.input.on('pointerdown', this.handlePointerDown, this)
+    this.input.on('pointermove', this.handlePointerMove, this)
+    this.input.keyboard?.on('keydown-SPACE', this.handleKey, this)
 
     this.phase = 'player_idle'
     this.updateScoreUI()
@@ -214,16 +215,30 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(600, () => {
       this.phase = 'aiming'
       audio.play('crowdHush')
-      this.instructText.setText('← → to aim  |  SPACE to confirm')
+      this.instructText.setText('TOUCH GOAL TO AIM   |   TAP TO CONFIRM')
     })
   }
 
-  private handleTap = () => {
+  private handlePointerDown = (pointer: Phaser.Input.Pointer) => {
     if (this.phase === 'aiming') {
+      this.aimX = Phaser.Math.Clamp(pointer.x, this.GOAL_LEFT + 10, this.GOAL_RIGHT - 10)
+      this.aimY = Phaser.Math.Clamp(pointer.y, this.GOAL_Y_TOP + 15, this.GOAL_Y_BOTTOM - 15)
       this.lockAim()
     } else if (this.phase === 'power') {
       this.lockPower()
     }
+  }
+
+  private handlePointerMove = (pointer: Phaser.Input.Pointer) => {
+    if (this.phase === 'aiming') {
+      this.aimX = Phaser.Math.Clamp(pointer.x, this.GOAL_LEFT + 10, this.GOAL_RIGHT - 10)
+      this.aimY = Phaser.Math.Clamp(pointer.y, this.GOAL_Y_TOP + 15, this.GOAL_Y_BOTTOM - 15)
+    }
+  }
+
+  private handleKey = () => {
+    if (this.phase === 'aiming') this.lockAim()
+    else if (this.phase === 'power') this.lockPower()
   }
 
   private lockAim() {
@@ -246,7 +261,7 @@ export default class GameScene extends Phaser.Scene {
     this.phase = 'power'
     this.power = 0
     this.powerDir = 1
-    this.instructText.setText('SPACE to set power!')
+    this.instructText.setText('TAP TO SHOOT')
 
     // Start composure ring — shrinks from 80 to 0 over 2.5s
     this.composureRingRadius = 80
@@ -461,7 +476,7 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(400, () => {
       this.phase = 'aiming'
       audio.play('crowdHush')
-      this.instructText.setText('← → to aim  |  SPACE to confirm')
+      this.instructText.setText('TOUCH GOAL TO AIM   |   TAP TO CONFIRM')
     })
   }
 
@@ -676,6 +691,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   destroy() {
-    this.input.off('pointerdown', this.handleTap, this)
+    this.input.off('pointerdown', this.handlePointerDown, this)
+    this.input.off('pointermove', this.handlePointerMove, this)
   }
 }
