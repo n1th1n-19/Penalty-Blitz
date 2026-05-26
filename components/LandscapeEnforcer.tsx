@@ -6,7 +6,7 @@ export default function LandscapeEnforcer() {
     const tryLock = async () => {
       try {
         await document.documentElement.requestFullscreen({ navigationUI: 'hide' })
-        await window.screen.orientation.lock('landscape')
+        await (window.screen.orientation as any).lock('landscape')
       } catch {}
     }
 

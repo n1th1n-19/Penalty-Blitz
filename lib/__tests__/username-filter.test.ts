@@ -27,7 +27,7 @@ describe('validateUsername', () => {
   it('rejects profanity', () => {
     const result = validateUsername('fuck')
     expect(result.ok).toBe(false)
-    expect(result.error).toBe(UsernameError.PROFANITY)
+    if (!result.ok) expect(result.error).toBe(UsernameError.PROFANITY)
   })
 
   it('accepts username at minimum length (3 chars)', () => {
