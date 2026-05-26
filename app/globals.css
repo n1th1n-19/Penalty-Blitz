@@ -218,64 +218,6 @@ html, body {
   background: #0a0a0f;
 }
 
-#rotate-prompt {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: #0a0a0f;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  color: #c8e8c8;
-  font-family: monospace;
-}
-
-#rotate-prompt svg {
-  width: 64px;
-  height: 64px;
-  animation: spin-once 1.5s ease-in-out infinite;
-}
-
-@keyframes spin-once {
-  0%   { transform: rotate(0deg); }
-  40%  { transform: rotate(90deg); }
-  100% { transform: rotate(90deg); }
-}
-
-#rotate-prompt p {
-  font-size: 16px;
-  letter-spacing: 3px;
-  color: #4a8a4a;
-}
-
-@media (orientation: portrait) and (max-width: 1024px) {
-  #rotate-prompt { display: none; }
-  #game-canvas-wrapper {
-    height: 60vh;
-  }
-  #mobile-controls-panel {
-    height: 40vh;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    background: #14532d;
-    padding: 0 24px;
-  }
-  #shoot-btn {
-    width: 72px;
-    height: 72px;
-    background: white;
-    color: #14532d;
-    font-weight: 900;
-    font-size: 11px;
-    border-radius: 50%;
-    border: none;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-  }
-}
 
 #__next {
   width: 100%;
