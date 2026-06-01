@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type Phaser from 'phaser'
 import { Kit } from '../../lib/game/types'
 import { CLUB_KITS } from '../../lib/game/kits'
@@ -54,6 +55,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const containerRef   = useRef<HTMLDivElement>(null)
   const gameRef        = useRef<Phaser.Game | null>(null)
   const sceneBridgeRef = useRef<GameSceneBridge | null>(null)
+  const router = useRouter()
 
   const [screen, setScreen]               = useState<Screen>(initialKit ? 'difficulty' : 'jersey')
   const [playerKit, setPlayerKit]         = useState<Kit>(initialKit ?? CLUB_KITS[0])
@@ -198,13 +200,26 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
     <div style={{ width: '100%', height: '100dvh', background: '#040d06', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {screen === 'jersey' && (
         <div style={{ width: '100%', height: '100%' }}>
-          <JerseySelect onSelect={startGame} />
+          <JerseySelect
+            onSelect={startGame}
+            onBack={() => router.push(session ? '/main' : '/')}
+          />
         </div>
       )}
 
       {screen === 'difficulty' && (
         <div style={{ width: '100%', height: '100%' }}>
-          <DifficultySelect onSelect={handleDifficultySelect} />
+          <DifficultySelect
+            onSelect={handleDifficultySelect}
+            onBack={() => {
+              if (initialKit) {
+                // came from main hub with a pre-set kit — go back to main
+                router.push('/main')
+              } else {
+                setScreen('jersey')
+              }
+            }}
+          />
         </div>
       )}
 
@@ -287,6 +302,14 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
               }
               setXpResult(null)
               setScreen(initialKit ? 'difficulty' : 'jersey')
+            }}
+            onMainMenu={() => {
+              if (gameRef.current) {
+                gameRef.current.destroy(true)
+                gameRef.current = null
+                sceneBridgeRef.current = null
+              }
+              router.push(session ? '/main' : '/')
             }}
           />
         </div>

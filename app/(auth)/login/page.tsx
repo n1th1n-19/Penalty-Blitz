@@ -6,56 +6,41 @@ import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ email: '', password: '' })
-  const [error, setError] = useState('')
+  const [form, setForm]     = useState({ email: '', password: '' })
+  const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-
-    const result = await signIn('credentials', {
-      email: form.email,
-      password: form.password,
-      redirect: false,
-    })
-
-    if (result?.error) {
-      setError('Invalid email or password')
-      setLoading(false)
-      return
-    }
-
+    const result = await signIn('credentials', { email: form.email, password: form.password, redirect: false })
+    if (result?.error) { setError('Invalid email or password'); setLoading(false); return }
     router.push('/main')
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <h2 style={{
-        fontFamily: "'Space Mono', monospace",
-        fontSize: 12,
-        fontWeight: 700,
-        letterSpacing: '0.25em',
-        color: 'rgba(255,255,255,0.4)',
-        textTransform: 'uppercase',
-        textAlign: 'center',
-        marginBottom: 4,
-      }}>
-        SIGN IN
-      </h2>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Heading */}
+      <div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#fff', letterSpacing: '0.05em', marginBottom: 4 }}>
+          Welcome back
+        </h1>
+        <p className="label-mono">Sign in to your account</p>
+      </div>
 
+      {/* Error */}
       {error && (
         <div style={{
-          background: 'rgba(239,68,68,0.1)',
-          border: '1px solid rgba(239,68,68,0.35)',
+          background: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.3)',
           borderLeft: '3px solid #ef4444',
           borderRadius: 8,
           padding: '10px 14px',
-          fontFamily: "'Space Mono', monospace",
+          fontFamily: 'var(--font-mono)',
           fontSize: 12,
           color: '#fca5a5',
-          letterSpacing: '0.05em',
+          letterSpacing: '0.04em',
         }}>
           {error}
         </div>
@@ -64,46 +49,42 @@ export default function LoginPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <label className="label-mono">Email</label>
         <input
-          type="email"
-          required
+          type="email" required
           value={form.email}
           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
           className="input-dark"
           placeholder="you@example.com"
+          autoComplete="email"
         />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label className="label-mono">Password</label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label className="label-mono">Password</label>
+          <button type="button" className="btn-text" style={{ fontSize: 9 }}>Forgot?</button>
+        </div>
         <input
-          type="password"
-          required
+          type="password" required
           value={form.password}
           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
           className="input-dark"
           placeholder="••••••••"
+          autoComplete="current-password"
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="btn-primary"
-        style={{ opacity: loading ? 0.6 : 1, marginTop: 4 }}
-      >
-        {loading ? 'SIGNING IN...' : 'SIGN IN'}
+      <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: 4, opacity: loading ? 0.65 : 1 }}>
+        {loading ? 'Signing in...' : 'Sign In'}
       </button>
 
-      <p style={{
-        fontFamily: "'Space Mono', monospace",
-        fontSize: 11,
-        color: 'var(--text-muted)',
-        textAlign: 'center',
-        letterSpacing: '0.1em',
-      }}>
+      <div className="section-divider">
+        <div className="section-divider-dot" />
+      </div>
+
+      <p style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
         No account?{' '}
-        <Link href="/register" style={{ color: '#4ade80', fontWeight: 700, textDecoration: 'none' }}>
-          Create one
+        <Link href="/register" style={{ color: 'var(--green-accent)', fontWeight: 700, textDecoration: 'none' }}>
+          Register
         </Link>
       </p>
     </form>

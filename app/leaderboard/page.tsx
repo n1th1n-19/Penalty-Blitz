@@ -7,67 +7,47 @@ export default async function LeaderboardPage() {
   const session = await getServerSession(authOptions)
 
   return (
-    <main style={{
+    <div style={{
       minHeight: '100dvh',
-      background: '#040d06',
-      backgroundImage: 'radial-gradient(ellipse 110% 55% at 50% -8%, #0d3320 0%, transparent 68%), linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)',
+      background: 'var(--bg-base)',
+      backgroundImage: 'var(--stadium-bg), var(--stadium-grid)',
       backgroundSize: '100% 100%, 72px 72px, 72px 72px',
       overflowY: 'auto',
     }}>
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: 'clamp(20px,4vw,36px) 20px clamp(40px,6vw,60px)' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: 'clamp(24px,4vw,48px) 20px 60px' }}>
+
+        {/* Back nav */}
+        <Link href="/main" style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10,
+          color: 'var(--text-muted)', textDecoration: 'none',
+          letterSpacing: '0.2em', display: 'inline-flex',
+          alignItems: 'center', gap: 6, marginBottom: 28,
+          transition: 'color 0.15s',
+        }}>
+          &larr; BACK
+        </Link>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div style={{ marginBottom: 32 }}>
+          <p className="label-mono" style={{ marginBottom: 8 }}>Global Rankings</p>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(26px, 7vw, 42px)',
+            fontSize: 'clamp(36px, 9vw, 60px)',
             color: '#fff',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.04em',
+            lineHeight: 1,
+            marginBottom: 16,
           }}>
             LEADERBOARD
           </h1>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Link
-              href="/game"
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.2em',
-                color: '#4ade80',
-                textDecoration: 'none',
-                padding: '8px 14px',
-                border: '1px solid rgba(74,222,128,0.3)',
-                borderRadius: 8,
-                background: 'rgba(74,222,128,0.08)',
-                transition: 'background 0.15s',
-              }}
-            >
-              ▶ PLAY
-            </Link>
-            <Link
-              href="/main"
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.2em',
-                color: 'rgba(255,255,255,0.5)',
-                textDecoration: 'none',
-                padding: '8px 14px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.03)',
-                transition: 'background 0.15s',
-              }}
-            >
-              ← BACK
-            </Link>
+          {/* Decorative divider */}
+          <div className="section-divider">
+            <div className="section-divider-dot" />
           </div>
         </div>
 
         <LeaderboardTable myUserId={session?.user?.id} />
       </div>
-    </main>
+    </div>
   )
 }

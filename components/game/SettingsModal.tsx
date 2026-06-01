@@ -5,57 +5,29 @@ import { getControlScheme, setControlScheme, ControlScheme } from '@/lib/game/mo
 import { DifficultyKey } from '@/lib/game/difficulty'
 
 interface Props {
-  open:               boolean
-  onClose:            () => void
-  defaultDifficulty:  DifficultyKey
+  open: boolean
+  onClose: () => void
+  defaultDifficulty: DifficultyKey
   onDifficultyChange: (k: DifficultyKey) => void
-  onControlsChange?:  (s: ControlScheme) => void
-  onReplayTutorial:   () => void
+  onControlsChange?: (s: ControlScheme) => void
+  onReplayTutorial: () => void
 }
 
-function SegmentedControl<T extends string>({
-  options, value, onChange, labelMap,
-}: {
-  options: T[]
-  value: T
-  onChange: (v: T) => void
-  labelMap?: Record<T, string>
-}) {
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
-    <div style={{
-      display: 'flex',
-      background: 'rgba(0,0,0,0.3)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 8,
-      padding: 3,
-      gap: 3,
-    }}>
-      {options.map(opt => (
-        <button
-          key={opt}
-          onClick={() => onChange(opt)}
-          style={{
-            flex: 1,
-            padding: '8px 6px',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer',
-            transition: 'background 0.15s, color 0.15s',
-            background: value === opt ? 'var(--green-btn)' : 'transparent',
-            color: value === opt ? '#fff' : 'rgba(255,255,255,0.4)',
-            boxShadow: value === opt ? '0 0 10px rgba(74,222,128,0.15)' : 'none',
-          }}
-        >
-          {labelMap ? labelMap[opt] : opt}
-        </button>
-      ))}
-    </div>
+    <button
+      onClick={onToggle}
+      className={`toggle-track${on ? ' on' : ''}`}
+      type="button"
+      aria-pressed={on}
+    >
+      <div className="toggle-thumb" />
+    </button>
   )
+}
+
+const DIFF_COLORS: Record<DifficultyKey, string> = {
+  easy: '#4ade80', medium: '#f59e0b', hard: '#f87171',
 }
 
 export default function SettingsModal({
@@ -67,174 +39,142 @@ export default function SettingsModal({
 
   if (!open) return null
 
-  const handleMuteToggle = () => {
-    if (muted) audio.unmute(); else audio.mute()
-    setMuted(!muted)
-  }
+  const handleMute = () => { if (muted) audio.unmute(); else audio.mute(); setMuted(!muted) }
+  const handleScheme = (s: ControlScheme) => { setControlScheme(s); setScheme(s); onControlsChange?.(s) }
+  const handleDiff = (k: DifficultyKey) => { setDiff(k); onDifficultyChange(k) }
 
-  const handleScheme = (s: ControlScheme) => {
-    setControlScheme(s)
-    setScheme(s)
-    onControlsChange?.(s)
-  }
-
-  const handleDiff = (k: DifficultyKey) => {
-    setDiff(k)
-    onDifficultyChange(k)
-  }
-
-  const controlLabels: Record<ControlScheme, string> = {
-    drag: 'DRAG',
-    joystick: 'PAD',
-    tap: 'TAP',
-  }
-  const diffLabels: Record<DifficultyKey, string> = {
-    easy: 'EASY',
-    medium: 'MED',
-    hard: 'HARD',
-  }
+  const CONTROLS: { key: ControlScheme; icon: string; label: string }[] = [
+    { key: 'drag',     icon: '⤢',  label: 'Drag' },
+    { key: 'joystick', icon: '◎',  label: 'Pad' },
+    { key: 'tap',      icon: '◉',  label: 'Tap' },
+  ]
 
   return (
     <div
+      onClick={onClose}
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        background: 'rgba(0,0,0,0.65)',
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        background: 'rgba(0,0,0,0.6)',
         backdropFilter: 'blur(4px)',
         WebkitBackdropFilter: 'blur(4px)',
       }}
-      onClick={onClose}
     >
-      {/* Bottom sheet */}
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%',
-          maxWidth: 480,
-          background: '#0d1f0d',
-          border: '1px solid rgba(255,255,255,0.1)',
+          width: '100%', maxWidth: 480,
+          background: '#0b1a0d',
+          border: '1px solid var(--border)',
           borderBottom: 'none',
           borderRadius: '20px 20px 0 0',
-          padding: '0 0 max(24px, env(safe-area-inset-bottom))',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 0,
+          paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
         }}
       >
-        {/* Handle bar */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 6px' }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
         </div>
 
         {/* Header */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '4px 20px 16px',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '6px 20px 16px',
+          borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 22,
-            color: '#fff',
-            letterSpacing: '0.05em',
-          }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: '#fff', letterSpacing: '0.05em' }}>
             SETTINGS
           </h2>
           <button
             onClick={onClose}
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.6)',
-              fontSize: 14,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
+              width: 32, height: 32, borderRadius: 8,
+              background: 'rgba(255,255,255,0.07)', border: '1px solid var(--border)',
+              color: 'var(--text-muted)', fontSize: 14, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700,
             }}
           >
             ✕
           </button>
         </div>
 
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Audio */}
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {/* Sound */}
           <section>
-            <p className="label-mono" style={{ marginBottom: 10 }}>Audio</p>
-            <button
-              onClick={handleMuteToggle}
-              style={{
-                width: '100%',
-                padding: '12px 18px',
-                borderRadius: 10,
-                border: muted
-                  ? '1px solid rgba(239,68,68,0.35)'
-                  : '1px solid rgba(74,222,128,0.35)',
-                background: muted
-                  ? 'rgba(239,68,68,0.12)'
-                  : 'rgba(74,222,128,0.10)',
-                color: muted ? '#fca5a5' : '#4ade80',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: '0.2em',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                transition: 'all 0.15s',
-              }}
-            >
-              <span>{muted ? '🔇  SOUND OFF' : '🔊  SOUND ON'}</span>
-              <span style={{
-                fontSize: 10,
-                opacity: 0.5,
-                letterSpacing: '0.1em',
-              }}>
-                {muted ? 'TAP TO ENABLE' : 'TAP TO MUTE'}
-              </span>
-            </button>
+            <p className="settings-section-label">Sound</p>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+            }}>
+              <div>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-primary)', fontWeight: 700, letterSpacing: '0.1em' }}>
+                  Game Sound
+                </p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {muted ? 'All sounds disabled' : 'Crowd, power bar, goals'}
+                </p>
+              </div>
+              <Toggle on={!muted} onToggle={handleMute} />
+            </div>
           </section>
 
           {/* Controls */}
           <section>
-            <p className="label-mono" style={{ marginBottom: 10 }}>Controls</p>
-            <SegmentedControl
-              options={['drag', 'joystick', 'tap'] as ControlScheme[]}
-              value={scheme}
-              onChange={handleScheme}
-              labelMap={controlLabels}
-            />
+            <p className="settings-section-label">Controls</p>
+            <div className="controls-icon-row">
+              {CONTROLS.map(({ key, icon, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleScheme(key)}
+                  className={`control-icon-btn${scheme === key ? ' active' : ''}`}
+                >
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
           </section>
 
           {/* Difficulty */}
           <section>
-            <p className="label-mono" style={{ marginBottom: 10 }}>Difficulty</p>
-            <SegmentedControl
-              options={['easy', 'medium', 'hard'] as DifficultyKey[]}
-              value={diff}
-              onChange={handleDiff}
-              labelMap={diffLabels}
-            />
+            <p className="settings-section-label">Difficulty</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['easy', 'medium', 'hard'] as DifficultyKey[]).map(k => (
+                <button
+                  key={k}
+                  onClick={() => handleDiff(k)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 6px',
+                    borderRadius: 8,
+                    border: diff === k
+                      ? `1px solid ${DIFF_COLORS[k]}`
+                      : '1px solid var(--border)',
+                    background: diff === k
+                      ? `${DIFF_COLORS[k]}18`
+                      : 'rgba(255,255,255,0.03)',
+                    color: diff === k ? DIFF_COLORS[k] : 'var(--text-muted)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
           </section>
 
-          {/* How to play */}
-          <button
-            onClick={onReplayTutorial}
-            className="btn-ghost"
-            style={{ marginTop: 4 }}
-          >
-            📖  HOW TO PLAY
+          {/* Tutorial */}
+          <button onClick={onReplayTutorial} className="btn-ghost" style={{ marginTop: -4 }}>
+            How to Play
           </button>
         </div>
       </div>

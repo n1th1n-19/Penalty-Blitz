@@ -20,257 +20,199 @@ interface Props {
   playerKit: Kit
   xpResult?: XpResultData | null
   onRestart: () => void
+  onMainMenu: () => void
 }
 
-export default function ResultScreen({ playerScore, cpuScore: totalRounds, playerKit, xpResult, onRestart }: Props) {
-  const ratio = playerScore / totalRounds
+export default function ResultScreen({ playerScore, cpuScore: totalRounds, playerKit, xpResult, onRestart, onMainMenu }: Props) {
   const [visible, setVisible] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t) }, [])
 
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 80)
-    return () => clearTimeout(t)
-  }, [])
+  const ratio = playerScore / totalRounds
+  const isPerfect = ratio === 1
 
   const rating =
-    ratio === 1   ? 'PERFECT!' :
-    ratio >= 0.8  ? 'EXCELLENT' :
-    ratio >= 0.6  ? 'GOOD' :
-    ratio >= 0.4  ? 'DECENT' :
-                    'ROUGH DAY'
+    isPerfect ? 'PERFECT' :
+    ratio >= 0.8 ? 'EXCELLENT' :
+    ratio >= 0.6 ? 'GOOD' :
+    ratio >= 0.4 ? 'DECENT' : 'ROUGH DAY'
 
   const ratingColor =
-    ratio === 1   ? '#fbbf24' :
-    ratio >= 0.8  ? '#4ade80' :
-    ratio >= 0.6  ? '#60a5fa' :
-    ratio >= 0.4  ? '#fde68a' :
-                    '#f87171'
-
-  const ratingGlow =
-    ratio === 1   ? 'rgba(251,191,36,0.25)' :
-    ratio >= 0.8  ? 'rgba(74,222,128,0.2)' :
-    ratio >= 0.6  ? 'rgba(96,165,250,0.2)' :
-    ratio >= 0.4  ? 'rgba(253,230,138,0.2)' :
-                    'rgba(248,113,113,0.2)'
+    isPerfect ? 'var(--gold)' :
+    ratio >= 0.8 ? 'var(--green-accent)' :
+    ratio >= 0.6 ? '#60a5fa' :
+    ratio >= 0.4 ? '#f59e0b' : '#f87171'
 
   const comment =
-    ratio === 1   ? 'The keeper had no chance. Flawless.' :
-    ratio >= 0.8  ? 'Excellent shooting. You kept the keeper guessing.' :
-    ratio >= 0.6  ? 'Solid technique. A couple slipped away.' :
-    ratio >= 0.4  ? 'Mixed bag. Aim for the corners next time.' :
-                    'The keeper read your shots. Mix it up next time.'
-
-  const scoreGoals = Array.from({ length: totalRounds }, (_, i) => i < playerScore)
+    isPerfect ? 'Flawless. The keeper never stood a chance.' :
+    ratio >= 0.8 ? 'Excellent shooting. Mix it up and they never read you.' :
+    ratio >= 0.6 ? 'Solid technique. A couple slipped away.' :
+    ratio >= 0.4 ? 'Mixed bag. Aim for the corners next time.' :
+    'The keeper read every shot. Change your pattern.'
 
   return (
     <div style={{
-      width: '100%',
       minHeight: '100dvh',
-      background: '#040d06',
-      backgroundImage: 'radial-gradient(ellipse 110% 55% at 50% -8%, #0d3320 0%, transparent 68%)',
+      background: 'var(--bg-base)',
+      backgroundImage: 'var(--stadium-bg)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: 'var(--font-mono)',
-      gap: 20,
-      padding: '24px 20px max(32px, env(safe-area-inset-bottom))',
+      padding: 'clamp(20px,4vw,40px) 20px max(32px, calc(env(safe-area-inset-bottom) + 24px))',
+      gap: 0,
+      overflowY: 'auto',
     }}>
 
-      {/* FULL TIME label */}
-      <p className="label-mono" style={{ letterSpacing: '0.4em' }}>FULL TIME</p>
-
-      {/* Rating — pops in */}
-      {visible && (
-        <h1
-          className="pop-in"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(36px, 10vw, 64px)',
-            color: ratingColor,
-            letterSpacing: '0.05em',
-            textShadow: `0 0 32px ${ratingGlow}`,
-            textAlign: 'center',
-          }}
-        >
-          {rating}
-        </h1>
-      )}
-
-      {/* Shot dots */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {scoreGoals.map((scored, i) => (
-          <div
-            key={i}
-            style={{
-              width: 14,
-              height: 14,
-              borderRadius: '50%',
-              background: scored ? '#4ade80' : 'rgba(255,255,255,0.12)',
-              border: scored ? '1px solid rgba(74,222,128,0.5)' : '1px solid rgba(255,255,255,0.08)',
-              boxShadow: scored ? '0 0 8px rgba(74,222,128,0.4)' : 'none',
-              transition: 'all 0.3s',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Score card */}
-      <div style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 16,
-        padding: 'clamp(16px,4vw,24px) clamp(28px,6vw,52px)',
-        display: 'flex',
-        gap: 24,
-        alignItems: 'center',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+      {/* ── Scoreboard card ──────────────────────────────────── */}
+      <div className="card slide-up" style={{
+        width: '100%',
+        maxWidth: 480,
+        overflow: 'hidden',
+        marginBottom: 14,
       }}>
-        <div style={{ textAlign: 'center' }}>
-          <p className="label-mono" style={{ marginBottom: 6 }}>{playerKit.shortName}</p>
-          <p style={{
-            fontSize: 'clamp(40px,12vw,64px)',
-            fontFamily: 'var(--font-display)',
-            color: ratingColor,
-            lineHeight: 1,
-            textShadow: `0 0 20px ${ratingGlow}`,
-          }}>
-            {playerScore}
-          </p>
-        </div>
-
+        {/* Green header band */}
         <div style={{
-          width: 1,
-          height: 60,
-          background: 'rgba(255,255,255,0.1)',
-          flexShrink: 0,
-        }} />
-
-        <div style={{ textAlign: 'center' }}>
-          <p className="label-mono" style={{ marginBottom: 6 }}>SHOTS</p>
-          <p style={{
-            fontSize: 'clamp(40px,12vw,64px)',
-            fontFamily: 'var(--font-display)',
-            color: 'rgba(255,255,255,0.35)',
-            lineHeight: 1,
-          }}>
-            {totalRounds}
-          </p>
-        </div>
-      </div>
-
-      {/* Comment */}
-      <p style={{
-        fontSize: 12,
-        color: 'var(--text-muted)',
-        maxWidth: 300,
-        textAlign: 'center',
-        letterSpacing: '0.05em',
-        lineHeight: 1.6,
-      }}>
-        {comment}
-      </p>
-
-      {/* XP panel */}
-      {xpResult && (
-        <div style={{
-          width: '100%',
-          maxWidth: 380,
-          background: ratio === 1
-            ? 'rgba(251,191,36,0.08)'
-            : 'rgba(74,222,128,0.06)',
-          border: ratio === 1
-            ? '1px solid rgba(251,191,36,0.3)'
-            : '1px solid rgba(74,222,128,0.2)',
-          borderRadius: 14,
-          padding: '18px 20px',
+          background: isPerfect
+            ? 'linear-gradient(90deg, #7c3200, #92400e, #7c3200)'
+            : 'linear-gradient(90deg, #0f3320, #14532d, #0f3320)',
+          padding: '10px 20px',
           display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}>
-          <p className="label-mono" style={{ color: '#4ade80', textAlign: 'center' }}>XP EARNED</p>
+          <span className="label-mono" style={{ color: isPerfect ? 'var(--gold)' : 'var(--green-accent)', letterSpacing: '0.4em' }}>
+            FULL TIME
+          </span>
+          <span className="label-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
+          </span>
+        </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-              {playerScore} goals × {xpResult.multiplier}
-            </span>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: 13 }}>
-              +{xpResult.goalXp} XP
-            </span>
-          </div>
-
-          {xpResult.bonusXp > 0 && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: 'rgba(251,191,36,0.1)',
-              border: '1px solid rgba(251,191,36,0.25)',
-              borderRadius: 8,
-              padding: '6px 10px',
+        <div style={{ padding: '24px 20px 20px' }}>
+          {/* Rating */}
+          {visible && (
+            <div className="pop-in" style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(38px,10vw,60px)',
+              color: ratingColor,
+              letterSpacing: '0.04em',
+              lineHeight: 1,
+              marginBottom: 8,
+              textShadow: `0 0 32px ${ratingColor}44`,
             }}>
-              <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em' }}>
-                ⭐ PERFECT BONUS
-              </span>
-              <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: 13 }}>
-                +{xpResult.bonusXp} XP
-              </span>
+              {rating}
             </div>
           )}
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 20 }}>
+            {comment}
+          </p>
 
+          {/* Score row */}
           <div style={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            paddingTop: 8,
-            marginTop: 2,
+            gap: 0,
+            marginBottom: 20,
+            background: 'rgba(0,0,0,0.25)',
+            borderRadius: 10,
+            overflow: 'hidden',
+            border: '1px solid var(--border)',
           }}>
-            <span className="label-mono">TOTAL</span>
+            <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
+              <p className="label-mono" style={{ marginBottom: 4 }}>{playerKit.shortName}</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: ratingColor, lineHeight: 1 }}>
+                {playerScore}
+              </p>
+            </div>
+            <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center' }}>
+              <p className="label-mono" style={{ marginBottom: 4 }}>SHOTS</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--text-muted)', lineHeight: 1 }}>
+                {totalRounds}
+              </p>
+            </div>
+          </div>
+
+          {/* Shot dots */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+            {Array.from({ length: totalRounds }).map((_, i) => (
+              <div
+                key={i}
+                className={`shot-dot${i < playerScore ? ' scored' : ' missed'}`}
+                style={{ width: 16, height: 16 }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── XP panel ─────────────────────────────────────────── */}
+      {xpResult && (
+        <div className="card slide-up-d1" style={{
+          width: '100%',
+          maxWidth: 480,
+          padding: '18px 20px',
+          marginBottom: 14,
+          borderLeft: isPerfect ? '3px solid var(--gold)' : '3px solid var(--green-accent)',
+        }}>
+          <p className="label-mono" style={{ color: 'var(--green-accent)', marginBottom: 14 }}>XP EARNED</p>
+
+          {[
+            { label: `${playerScore} goals × ${xpResult.multiplier}`, value: `+${xpResult.goalXp}` },
+            ...(xpResult.bonusXp > 0 ? [{ label: 'Perfect game bonus', value: `+${xpResult.bonusXp}`, gold: true }] : []),
+          ].map(({ label, value, gold }) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: gold ? 'var(--gold)' : 'var(--text-muted)' }}>
+                {label}
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: gold ? 'var(--gold)' : 'var(--text-secondary)' }}>
+                {value} XP
+              </span>
+            </div>
+          ))}
+
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 4,
+          }}>
+            <span className="label-mono">Total</span>
             <span style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 22,
-              color: '#4ade80',
-              letterSpacing: '0.03em',
-              textShadow: '0 0 16px rgba(74,222,128,0.3)',
+              fontSize: 26,
+              color: 'var(--green-accent)',
+              textShadow: '0 0 16px rgba(34,197,94,0.3)',
             }}>
               +{xpResult.totalXp} XP
             </span>
           </div>
 
           {xpResult.leveledUp && (
-            <div
-              className="level-up-anim"
-              style={{
-                textAlign: 'center',
-                fontFamily: 'var(--font-display)',
-                fontSize: 24,
-                color: '#fbbf24',
-                letterSpacing: '0.05em',
-                textShadow: '0 0 24px rgba(251,191,36,0.4)',
-                marginTop: 4,
-              }}
-            >
-              ⭐ LEVEL UP — LV.{xpResult.newLevel}
+            <div className="level-up-anim" style={{
+              marginTop: 12,
+              padding: '10px 14px',
+              background: 'rgba(245,158,11,0.1)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 8,
+              fontFamily: 'var(--font-display)',
+              fontSize: 20,
+              color: 'var(--gold)',
+              letterSpacing: '0.05em',
+              textAlign: 'center',
+            }}>
+              LEVEL {xpResult.newLevel} REACHED
             </div>
           )}
 
-          <div style={{ marginTop: 4 }}>
+          <div style={{ marginTop: 12 }}>
             <XpBar xp={xpResult.newTotalXp} level={xpResult.newLevel} />
           </div>
         </div>
       )}
 
-      {/* Play again */}
-      <button
-        onClick={onRestart}
-        className="btn-primary"
-        style={{ maxWidth: 360 }}
-      >
-        PLAY AGAIN
-      </button>
+      {/* ── Actions ───────────────────────────────────────────── */}
+      <div className="slide-up-d2" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button onClick={onRestart} className="btn-primary">Play Again</button>
+        <button onClick={onMainMenu} className="btn-ghost">Main Menu</button>
+      </div>
     </div>
   )
 }

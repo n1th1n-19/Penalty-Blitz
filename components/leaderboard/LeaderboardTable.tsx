@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 
 type Metric = 'goals' | 'bestgame' | 'winrate' | 'xp'
@@ -18,177 +17,101 @@ interface Row {
   gamesPlayed: number
 }
 
-interface ApiResponse {
-  rows: Row[]
-  myRow: Row | null
-  metric: Metric
-  period: Period
-}
+interface ApiResponse { rows: Row[]; myRow: Row | null; metric: Metric; period: Period }
 
-interface Props {
-  myUserId?: string
-}
+interface Props { myUserId?: string }
 
-const METRIC_LABELS: { value: Metric; label: string }[] = [
-  { value: 'goals',    label: 'Goals' },
-  { value: 'bestgame', label: 'Best' },
-  { value: 'winrate',  label: 'Win%' },
-  { value: 'xp',       label: 'XP' },
+const METRICS: { v: Metric; label: string }[] = [
+  { v: 'goals',    label: 'Goals' },
+  { v: 'bestgame', label: 'Best Game' },
+  { v: 'winrate',  label: 'Win Rate' },
+  { v: 'xp',       label: 'XP' },
+]
+const PERIODS: { v: Period; label: string }[] = [
+  { v: 'alltime', label: 'All Time' },
+  { v: 'month',   label: 'Month' },
+  { v: 'week',    label: 'Week' },
+  { v: 'today',   label: 'Today' },
 ]
 
-const PERIOD_OPTIONS: { value: Period; label: string }[] = [
-  { value: 'alltime', label: 'All Time' },
-  { value: 'month',   label: 'Month' },
-  { value: 'week',    label: 'Week' },
-  { value: 'today',   label: 'Today' },
-]
-
-function formatPrimaryValue(metric: Metric, value: number): string {
-  if (metric === 'goals')    return `${value}`
-  if (metric === 'bestgame') return `${value}/5`
-  if (metric === 'winrate')  return `${value}%`
-  return `${value}`
+function formatValue(metric: Metric, v: number) {
+  if (metric === 'bestgame') return `${v}/5`
+  if (metric === 'winrate')  return `${v}%`
+  return `${v}`
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
-  if (medals[rank]) {
-    return (
-      <span style={{ fontSize: 22, flexShrink: 0, width: 32, textAlign: 'center' }}>
-        {medals[rank]}
-      </span>
-    )
-  }
+function PodiumRow({ row, metric, isOwn }: { row: Row; metric: Metric; isOwn: boolean }) {
+  const cls = `podium-row podium-${row.rank}${isOwn ? ' lb-row own' : ''}`
   return (
-    <span style={{
-      flexShrink: 0,
-      width: 32,
-      textAlign: 'center',
-      fontFamily: 'var(--font-mono)',
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.3)',
-      fontWeight: 700,
-    }}>
-      #{rank}
-    </span>
-  )
-}
-
-function LeaderboardRow({
-  row, metric, isOwn, showYouLabel,
-}: {
-  row: Row
-  metric: Metric
-  isOwn: boolean
-  showYouLabel: boolean
-}) {
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      padding: '12px 16px',
-      borderRadius: 10,
-      background: isOwn ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
-      border: isOwn
-        ? '1px solid rgba(74,222,128,0.3)'
-        : '1px solid rgba(255,255,255,0.08)',
-      borderLeft: isOwn ? '3px solid #4ade80' : '1px solid rgba(255,255,255,0.08)',
-      transition: 'background 0.15s',
-    }}>
-      <RankBadge rank={row.rank} />
-
+    <div className={cls}>
+      <div className="podium-rank">{row.rank}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
           <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 700,
-            fontSize: 13,
-            color: isOwn ? '#4ade80' : 'rgba(255,255,255,0.9)',
-            letterSpacing: '0.05em',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14,
+            color: isOwn ? 'var(--green-accent)' : 'var(--text-primary)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {row.username}
           </span>
           <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: '0.15em',
-            color: 'rgba(255,255,255,0.35)',
+            fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+            letterSpacing: '0.15em', color: 'var(--text-muted)',
             background: 'rgba(255,255,255,0.06)',
-            padding: '1px 6px',
-            borderRadius: 4,
-          }}>
-            LV.{row.level}
-          </span>
-          {showYouLabel && (
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: '0.15em',
-              color: '#4ade80',
-            }}>
-              YOU
-            </span>
-          )}
+            padding: '1px 6px', borderRadius: 4,
+          }}>LV.{row.level}</span>
+          {isOwn && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: 'var(--green-accent)' }}>YOU</span>}
         </div>
-        {metric !== 'winrate' && (
-          <p style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            color: 'var(--text-muted)',
-            marginTop: 2,
-            letterSpacing: '0.05em',
-          }}>
-            {row.winRate}% win rate
-          </p>
-        )}
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
+          {row.gamesPlayed} games played
+        </p>
       </div>
-
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <p style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 20,
-          color: isOwn ? '#4ade80' : 'rgba(255,255,255,0.85)',
-          letterSpacing: '0.03em',
-          textShadow: isOwn ? '0 0 12px rgba(74,222,128,0.3)' : 'none',
+          fontFamily: 'var(--font-display)', fontSize: 24,
+          color: isOwn ? 'var(--green-accent)' : 'var(--text-primary)',
+          letterSpacing: '0.02em',
         }}>
-          {formatPrimaryValue(metric, row.primaryValue)}
-        </p>
-        <p style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 9,
-          color: 'var(--text-muted)',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-        }}>
-          {metric === 'goals' ? 'goals' : metric === 'bestgame' ? 'best' : metric === 'winrate' ? 'win%' : 'xp'}
+          {formatValue(metric, row.primaryValue)}
         </p>
       </div>
     </div>
   )
 }
 
-function SkeletonRow() {
+function RegularRow({ row, metric, isOwn }: { row: Row; metric: Metric; isOwn: boolean }) {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      padding: '12px 16px',
-      borderRadius: 10,
-      border: '1px solid rgba(255,255,255,0.06)',
-    }}>
-      <div className="skeleton" style={{ width: 32, height: 22, borderRadius: 4, flexShrink: 0 }} />
-      <div style={{ flex: 1 }}>
-        <div className="skeleton" style={{ width: '45%', height: 13, marginBottom: 6 }} />
-        <div className="skeleton" style={{ width: '30%', height: 10 }} />
+    <div className={`lb-row${isOwn ? ' own' : ''}`}>
+      <span className="lb-rank-num">#{row.rank}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12,
+            color: isOwn ? 'var(--green-accent)' : 'var(--text-secondary)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{row.username}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: 4 }}>
+            LV.{row.level}
+          </span>
+          {isOwn && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: 'var(--green-accent)' }}>YOU</span>}
+        </div>
       </div>
-      <div className="skeleton" style={{ width: 40, height: 20 }} />
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: isOwn ? 'var(--green-accent)' : 'var(--text-secondary)', flexShrink: 0 }}>
+        {formatValue(metric, row.primaryValue)}
+      </span>
+    </div>
+  )
+}
+
+function ShimmerRow() {
+  return (
+    <div style={{ display: 'flex', gap: 12, padding: '12px 0', alignItems: 'center' }}>
+      <div className="shimmer" style={{ width: 32, height: 20, flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <div className="shimmer" style={{ width: '45%', height: 13, marginBottom: 6 }} />
+        <div className="shimmer" style={{ width: '28%', height: 10 }} />
+      </div>
+      <div className="shimmer" style={{ width: 40, height: 20, flexShrink: 0 }} />
     </div>
   )
 }
@@ -196,125 +119,107 @@ function SkeletonRow() {
 export default function LeaderboardTable({ myUserId }: Props) {
   const [metric, setMetric] = useState<Metric>('goals')
   const [period, setPeriod] = useState<Period>('alltime')
-  const [rows, setRows] = useState<Row[]>([])
-  const [myRow, setMyRow] = useState<Row | null>(null)
+  const [rows, setRows]     = useState<Row[]>([])
+  const [myRow, setMyRow]   = useState<Row | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]   = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
-
+    setLoading(true); setError(null)
     fetch(`/api/leaderboard?metric=${metric}&period=${period}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<ApiResponse>
-      })
-      .then(data => {
-        if (cancelled) return
-        setRows(data.rows)
-        setMyRow(data.myRow)
-        setLoading(false)
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError('Failed to load leaderboard. Please try again.')
-          setLoading(false)
-        }
-      })
-
+      .then(r => { if (!r.ok) throw new Error(); return r.json() as Promise<ApiResponse> })
+      .then(d => { if (cancelled) return; setRows(d.rows); setMyRow(d.myRow); setLoading(false) })
+      .catch(() => { if (!cancelled) { setError('Failed to load. Please try again.'); setLoading(false) } })
     return () => { cancelled = true }
   }, [metric, period])
 
-  const myRowVisibleInList = myRow != null && rows.some(r => r.userId === myRow.userId)
-
-  const btnStyle = (active: boolean): React.CSSProperties => ({
-    padding: '7px 14px',
-    borderRadius: 8,
-    fontFamily: 'var(--font-mono)',
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: '0.15em',
-    textTransform: 'uppercase',
-    border: active ? '1px solid rgba(74,222,128,0.4)' : '1px solid rgba(255,255,255,0.08)',
-    background: active ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.03)',
-    color: active ? '#4ade80' : 'rgba(255,255,255,0.4)',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-    flexShrink: 0,
-  })
+  const myInList = myRow != null && rows.some(r => r.userId === myRow.userId)
+  const podium   = rows.filter(r => r.rank <= 3)
+  const rest     = rows.filter(r => r.rank > 3)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* Metric tabs — scrollable on mobile */}
-      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <div style={{ display: 'flex', gap: 6, minWidth: 'max-content' }}>
-          {METRIC_LABELS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setMetric(value)}
-              style={btnStyle(metric === value)}
-            >
-              {label}
-            </button>
-          ))}
-          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '0 4px', alignSelf: 'stretch' }} />
-          {PERIOD_OPTIONS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setPeriod(value)}
-              style={btnStyle(period === value)}
-            >
-              {label}
-            </button>
-          ))}
+      {/* Metric tabs */}
+      <div className="tabs" style={{ overflowX: 'auto' }}>
+        {METRICS.map(({ v, label }) => (
+          <button key={v} onClick={() => setMetric(v)} className={`tab-btn${metric === v ? ' active' : ''}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Period pills */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+        {PERIODS.map(({ v, label }) => (
+          <button
+            key={v}
+            onClick={() => setPeriod(v)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 20,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              border: period === v ? '1px solid var(--border-accent)' : '1px solid var(--border)',
+              background: period === v ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
+              color: period === v ? 'var(--green-accent)' : 'var(--text-muted)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {Array.from({ length: 6 }).map((_, i) => <ShimmerRow key={i} />)}
         </div>
-      </div>
-
-      {/* Win rate notice */}
-      {metric === 'winrate' && (
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
-          Win Rate requires at least 10 games to qualify.
+      ) : error ? (
+        <p style={{ fontFamily: 'var(--font-mono)', color: '#f87171', textAlign: 'center', padding: '32px 0', fontSize: 12 }}>
+          {error}
         </p>
-      )}
+      ) : rows.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--text-dim)', marginBottom: 12 }}>◎</div>
+          <p className="label-mono" style={{ letterSpacing: '0.3em' }}>No results yet</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Podium — top 3 */}
+          {podium.map(row => (
+            <PodiumRow key={row.userId} row={row} metric={metric} isOwn={row.userId === myUserId} />
+          ))}
 
-      {/* Rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {loading ? (
-          Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-        ) : error ? (
-          <p style={{ fontFamily: 'var(--font-mono)', color: '#f87171', textAlign: 'center', padding: '32px 0', fontSize: 12 }}>
-            {error}
-          </p>
-        ) : (
-          <>
-            {rows.length === 0 && (
-              <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textAlign: 'center', padding: '48px 0', fontSize: 12, letterSpacing: '0.2em' }}>
-                NO RESULTS YET
+          {/* Divider after podium */}
+          {rest.length > 0 && (
+            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+          )}
+
+          {/* Regular rows */}
+          {rest.map(row => (
+            <RegularRow key={row.userId} row={row} metric={metric} isOwn={row.userId === myUserId} />
+          ))}
+
+          {/* My row pinned at bottom if not in list */}
+          {myRow && !myInList && (
+            <>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-dim)', textAlign: 'center', letterSpacing: '0.2em' }}>
+                . . .
               </p>
-            )}
-            {rows.map(row => (
-              <LeaderboardRow
-                key={row.userId}
-                row={row}
-                metric={metric}
-                isOwn={row.userId === myUserId}
-                showYouLabel={row.userId === myUserId}
-              />
-            ))}
-            {myRow != null && !myRowVisibleInList && (
-              <>
-                <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textAlign: 'center', fontSize: 12, letterSpacing: '0.2em' }}>
-                  · · ·
-                </p>
-                <LeaderboardRow row={myRow} metric={metric} isOwn={true} showYouLabel={true} />
-              </>
-            )}
-          </>
-        )}
-      </div>
+              <RegularRow row={myRow} metric={metric} isOwn={true} />
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
