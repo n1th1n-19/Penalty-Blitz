@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@types/yuka": "^0.7.4",
     "bad-words": "^4.0.0",
     "bcryptjs": "^3.0.3",
     "driver.js": "^1.4.0",
@@ -26,14 +27,15 @@
     "phaser": "^3.80.1",
     "prisma": "^6.19.3",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "yuka": "^0.7.8"
   },
   "devDependencies": {
     "@types/bad-words": "^3.0.3",
     "@types/bcryptjs": "^3.0.0",
     "@types/howler": "^2.2.13",
-    "@types/node": "^20",
-    "@types/react": "^18",
+    "@types/node": "20.19.41",
+    "@types/react": "18.3.29",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10",

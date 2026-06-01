@@ -11,6 +11,8 @@ import { DifficultyKey, DifficultyConfig, DIFFICULTY } from '@/lib/game/difficul
 import { useSession } from 'next-auth/react'
 import { createTutorial } from '@/lib/game/tutorial'
 import { xpBreakdown, type Difficulty } from '@/lib/xp'
+import { isTouchDevice, isFirstVisitMobile } from '@/lib/game/mobile-controls'
+import MobileGameHUD, { type GameSceneBridge } from './MobileGameHUD'
 
 type Screen = 'jersey' | 'difficulty' | 'game' | 'result'
 
@@ -27,7 +29,6 @@ interface XpResultData {
 
 // Auto-generate a contrasting keeper kit
 function getKeeperKit(playerKit: Kit): Kit {
-  // Find a kit with a very different primary colour (just pick a fixed neon green keeper kit)
   return {
     id: 'keeper',
     name: 'Keeper',
@@ -50,17 +51,24 @@ interface PenaltyGameProps {
 }
 
 export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const gameRef = useRef<Phaser.Game | null>(null)
-  const [screen, setScreen] = useState<Screen>(initialKit ? 'difficulty' : 'jersey')
-  const [playerKit, setPlayerKit] = useState<Kit>(initialKit ?? CLUB_KITS[0])
-  const [finalScore, setFinalScore] = useState({ player: 0, cpu: 0 })
-  const [difficulty, setDifficulty] = useState<DifficultyKey>('medium')
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const containerRef   = useRef<HTMLDivElement>(null)
+  const gameRef        = useRef<Phaser.Game | null>(null)
+  const sceneBridgeRef = useRef<GameSceneBridge | null>(null)
+
+  const [screen, setScreen]               = useState<Screen>(initialKit ? 'difficulty' : 'jersey')
+  const [playerKit, setPlayerKit]         = useState<Kit>(initialKit ?? CLUB_KITS[0])
+  const [finalScore, setFinalScore]       = useState({ player: 0, cpu: 0 })
+  const [difficulty, setDifficulty]       = useState<DifficultyKey>('medium')
+  const [settingsOpen, setSettingsOpen]   = useState(false)
   const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['medium'])
-  const [xpResult, setXpResult] = useState<XpResultData | null>(null)
+  const [xpResult, setXpResult]           = useState<XpResultData | null>(null)
+  const [isTouch, setIsTouch]             = useState(false)
+
   const { data: session } = useSession()
-  const tutorialFiredRef = useRef(false)
+  const tutorialFiredRef  = useRef(false)
+
+  // Detect touch device client-side
+  useEffect(() => { setIsTouch(isTouchDevice()) }, [])
 
   const startGame = async (kit: Kit) => {
     setPlayerKit(kit)
@@ -84,6 +92,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
     if (gameRef.current) {
       gameRef.current.destroy(true)
       gameRef.current = null
+      sceneBridgeRef.current = null
     }
 
     const W = window.innerWidth
@@ -145,14 +154,14 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
                 setTimeout(() => setScreen('result'), 1000)
               },
             })
+            // Connect bridge ref to the live GameScene
+            sceneBridgeRef.current = gameScene as unknown as GameSceneBridge
           }
         }
       }
     })
 
-    // Start PitchScene first (background), GameScene on top
     game.scene.start('PitchScene')
-
     gameRef.current = game
   }
 
@@ -161,6 +170,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
       if (gameRef.current) {
         gameRef.current.destroy(true)
         gameRef.current = null
+        sceneBridgeRef.current = null
       }
     }
   }, [])
@@ -171,10 +181,11 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
     if (tutorialFiredRef.current) return
     tutorialFiredRef.current = true
 
+    const mobile = isTouchDevice()
     const timer = setTimeout(() => {
       const t = createTutorial(() => {
         fetch('/api/auth/tutorial-seen', { method: 'PATCH' }).catch(() => {})
-      })
+      }, mobile)
       t.drive()
     }, 1500)
 
@@ -184,7 +195,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const getGameScene = () => gameRef.current?.scene.getScene('GameScene') as any
 
   return (
-    <div style={{ width: '100%', height: '100dvh', background: '#0a0f0a', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: '100%', height: '100dvh', background: '#040d06', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {screen === 'jersey' && (
         <div style={{ width: '100%', height: '100%' }}>
           <JerseySelect onSelect={startGame} />
@@ -199,31 +210,62 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
 
       {screen === 'game' && (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          {/* Phaser canvas container */}
           <div
             ref={containerRef}
             style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           />
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="Settings"
-            className="absolute top-3 right-3 z-10 bg-white bg-opacity-20 text-white font-bold text-xs px-3 py-1.5 rounded-lg hover:bg-opacity-30"
-          >
-            SETTINGS
-          </button>
+
+          {/* Mobile HUD overlay (touch only) */}
+          {isTouch && (
+            <MobileGameHUD
+              sceneRef={sceneBridgeRef}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+          )}
+
+          {/* Desktop settings button (hidden on mobile since HUD has one) */}
+          {!isTouch && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Settings"
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                zIndex: 10,
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.2em',
+                color: 'rgba(255,255,255,0.7)',
+                background: 'rgba(0,0,0,0.45)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8,
+                padding: '7px 12px',
+                cursor: 'pointer',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+              }}
+            >
+              ⚙ SETTINGS
+            </button>
+          )}
+
           <SettingsModal
             open={settingsOpen}
             onClose={() => setSettingsOpen(false)}
             defaultDifficulty={difficulty}
             onDifficultyChange={(k) => {
-                setDifficulty(k)
-                getGameScene()?.setDifficultyConfig(DIFFICULTY[k])
-              }}
-              onControlsChange={(s) => {
-                getGameScene()?.setControlScheme(s)
-              }}
+              setDifficulty(k)
+              getGameScene()?.setDifficultyConfig(DIFFICULTY[k])
+            }}
+            onControlsChange={(s) => {
+              getGameScene()?.setControlScheme(s)
+            }}
             onReplayTutorial={() => {
               setSettingsOpen(false)
-              const t = createTutorial(() => {})
+              const t = createTutorial(() => {}, isTouchDevice())
               t.drive()
             }}
           />
@@ -241,6 +283,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
               if (gameRef.current) {
                 gameRef.current.destroy(true)
                 gameRef.current = null
+                sceneBridgeRef.current = null
               }
               setXpResult(null)
               setScreen(initialKit ? 'difficulty' : 'jersey')

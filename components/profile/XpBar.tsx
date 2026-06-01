@@ -17,22 +17,41 @@ export default function XpBar({ xp, level }: XpBarProps) {
   const [width, setWidth] = useState(0)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setWidth(progress * 100)
-    }, 100)
+    const timer = setTimeout(() => setWidth(progress * 100), 120)
     return () => clearTimeout(timer)
   }, [progress])
 
   return (
     <div>
-      <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1">
-        <span>Level {level}</span>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.15em',
+        color: 'var(--text-muted)',
+        marginBottom: 6,
+      }}>
+        <span>LV.{level}</span>
         <span>{xp} / {nextThreshold} XP</span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div style={{
+        height: 6,
+        background: 'rgba(255,255,255,0.06)',
+        borderRadius: 99,
+        overflow: 'hidden',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}>
         <div
-          className="h-full bg-green-500 rounded-full transition-all duration-1000 ease-out"
-          style={{ width: `${width}%` }}
+          style={{
+            height: '100%',
+            width: `${width}%`,
+            background: 'linear-gradient(90deg, #15803d, #4ade80)',
+            borderRadius: 99,
+            transition: 'width 1.1s cubic-bezier(0.22,1,0.36,1)',
+            boxShadow: '0 0 8px rgba(74,222,128,0.4)',
+          }}
         />
       </div>
     </div>

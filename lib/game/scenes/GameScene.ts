@@ -39,7 +39,8 @@ export default class GameScene extends Phaser.Scene {
   private get PLAYER_GROUND() { return this.scale.height * 0.767 }
   private get KEEPER_GROUND() { return this.scale.height * 0.541 }
 
-  private phase: GamePhase = 'intro'
+  private _phase: GamePhase = 'intro'
+  private get phaseProp() { return this._phase }
   private tick = 0
 
   // Aim
@@ -133,6 +134,51 @@ export default class GameScene extends Phaser.Scene {
     this.controlScheme = scheme
   }
 
+  // ── Public bridge for MobileGameHUD ─────────────────────────────────────
+
+  get phase(): GamePhase { return this._phase }
+  get aimNormX(): number {
+    const gw = this.GOAL_RIGHT - this.GOAL_LEFT
+    return gw > 0 ? (this.aimX - this.GOAL_LEFT) / gw : 0.5
+  }
+  get aimNormY(): number {
+    const gh = this.GOAL_Y_BOTTOM - this.GOAL_Y_TOP
+    return gh > 0 ? (this.aimY - this.GOAL_Y_TOP) / gh : 0.5
+  }
+  get powerValue(): number { return this.power / 100 }
+  get roundNumber(): number { return this.round }
+  get goals(): number { return this.playerScore }
+  get totalRounds(): number { return this.maxRounds }
+
+  setAimFromNormalized(nx: number, ny: number) {
+    this.aimX = this.GOAL_LEFT + nx * (this.GOAL_RIGHT - this.GOAL_LEFT)
+    this.aimY = this.GOAL_Y_TOP  + ny * (this.GOAL_Y_BOTTOM - this.GOAL_Y_TOP)
+  }
+
+  confirmAim() {
+    if (this._phase === 'aiming') {
+      this.vibrate(10)
+      this.lockAim()
+    }
+  }
+
+  confirmPower() {
+    if (this._phase === 'power') {
+      this.vibrate(15)
+      this.lockPower()
+    }
+  }
+
+  private vibrate(pattern: number | number[]) {
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern)
+      }
+    } catch {
+      // vibrate not supported or blocked — silently ignore
+    }
+  }
+
   create() {
     const W = this.scale.width
     const H = this.scale.height
@@ -220,37 +266,37 @@ export default class GameScene extends Phaser.Scene {
     this.input.on('pointermove', this.handlePointerMove, this)
     this.input.keyboard?.on('keydown-SPACE', this.handleKey, this)
 
-    this.phase = 'player_idle'
+    this._phase = 'player_idle'
     this.updateScoreUI()
 
     this.time.delayedCall(600, () => {
-      this.phase = 'aiming'
+      this._phase = 'aiming'
       audio.play('crowdHush')
       this.instructText.setText('TOUCH GOAL TO AIM   |   TAP TO CONFIRM')
     })
   }
 
   private handlePointerDown = (pointer: Phaser.Input.Pointer) => {
-    if (this.phase === 'aiming') {
+    if (this._phase === 'aiming') {
       this.aimX = Phaser.Math.Clamp(pointer.x, this.GOAL_LEFT + 10, this.GOAL_RIGHT - 10)
       this.aimY = Phaser.Math.Clamp(pointer.y, this.GOAL_Y_TOP + 15, this.GOAL_Y_BOTTOM - 15)
       this.lockAim()
-    } else if (this.phase === 'power') {
+    } else if (this._phase === 'power') {
       this.lockPower()
     }
   }
 
   private handlePointerMove = (pointer: Phaser.Input.Pointer) => {
     if (this.controlScheme === 'tap') return
-    if (this.phase === 'aiming') {
+    if (this._phase === 'aiming') {
       this.aimX = Phaser.Math.Clamp(pointer.x, this.GOAL_LEFT + 10, this.GOAL_RIGHT - 10)
       this.aimY = Phaser.Math.Clamp(pointer.y, this.GOAL_Y_TOP + 15, this.GOAL_Y_BOTTOM - 15)
     }
   }
 
   private handleKey = () => {
-    if (this.phase === 'aiming') this.lockAim()
-    else if (this.phase === 'power') this.lockPower()
+    if (this._phase === 'aiming') this.lockAim()
+    else if (this._phase === 'power') this.lockPower()
   }
 
   private lockAim() {
@@ -270,7 +316,7 @@ export default class GameScene extends Phaser.Scene {
     this.lockedShotX = Math.max(0, Math.min(1, (this.aimX - this.GOAL_LEFT) / goalW))
     this.lockedShotY = Math.max(0, Math.min(1, (this.aimY - this.GOAL_Y_TOP) / goalH))
 
-    this.phase = 'power'
+    this._phase = 'power'
     this.power = 0
     this.powerDir = 1
     this.instructText.setText('TAP TO SHOOT')
@@ -339,7 +385,7 @@ export default class GameScene extends Phaser.Scene {
     this.ballStartY = this.PLAYER_GROUND - 10
     this.ballT = 0
 
-    this.phase = 'runup'
+    this._phase = 'runup'
     this.runupTick = 0
     this.instructText.setText('')
     this.powerBarBg.clear()
@@ -388,7 +434,7 @@ export default class GameScene extends Phaser.Scene {
     this.ai.syncShot(result === 'goal', this.lockedShotX, this.lockedShotY, this.lockedPower, prev?.x, prev?.y)
     this.lastResult = result
     this.resultTick = 0
-    this.phase = 'result'
+    this._phase = 'result'
 
     if (result === 'goal') {
       this.playerScore++
@@ -458,7 +504,7 @@ export default class GameScene extends Phaser.Scene {
 
   private checkGameOver(): boolean {
     if (this.round > this.maxRounds) {
-      this.phase = 'game_over'
+      this._phase = 'game_over'
       if (this.playerScore === this.maxRounds) {
         audio.play('perfectFanfare')
       }
@@ -482,11 +528,11 @@ export default class GameScene extends Phaser.Scene {
     this.keeperPredY = 0.75
     this.playerPose = POSES.idle()
     this.keeperPose = POSES.keeperIdle(0)
-    this.phase = 'player_idle'
+    this._phase = 'player_idle'
     this.updateScoreUI()
 
     this.time.delayedCall(400, () => {
-      this.phase = 'aiming'
+      this._phase = 'aiming'
       audio.play('crowdHush')
       this.instructText.setText('TOUCH GOAL TO AIM   |   TAP TO CONFIRM')
     })
@@ -510,7 +556,7 @@ export default class GameScene extends Phaser.Scene {
     const W = this.scale.width
     const H = this.scale.height
 
-    if (this.phase === 'aiming') {
+    if (this._phase === 'aiming') {
       if (this.cursors.left.isDown) {
         this.aimX = Math.max(this.GOAL_LEFT + 10, this.aimX - 4)
       } else if (this.cursors.right.isDown) {
@@ -532,30 +578,30 @@ export default class GameScene extends Phaser.Scene {
       this.keeperLeanOffset = leanDir * leanMax * confidence
     }
 
-    if (this.phase === 'power') {
+    if (this._phase === 'power') {
       this.power += this.powerDir * this.powerSpeed
       if (this.power >= 100) { this.power = 100; this.powerDir = -1 }
       if (this.power <= 0)   { this.power = 0;   this.powerDir =  1 }
       audio.play('powerbarTick')
     }
 
-    if (this.phase === 'runup') {
+    if (this._phase === 'runup') {
       this.runupTick++
       this.playerPose = POSES.runup(this.runupTick)
       if (this.runupTick >= 40) {
-        this.phase = 'kick'
+        this._phase = 'kick'
         this.tick = 0
       }
     }
 
-    if (this.phase === 'kick') {
+    if (this._phase === 'kick') {
       this.playerPose = POSES.kick(this.tick)
       if (this.tick === 1) {
         audio.play('kick')
         this.cameras.main.shake(150, 0.003)
       }
       if (this.tick >= 25) {
-        this.phase = 'ball_flying'
+        this._phase = 'ball_flying'
         this.ballT = 0
         this.lastResult = this.determineResult()
         // Keeper faces player (mirrored), so diveLeft/Right are swapped relative to screen zones
@@ -567,7 +613,7 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    if (this.phase === 'ball_flying') {
+    if (this._phase === 'ball_flying') {
       this.ballT += 0.038
       const t = Math.min(this.ballT, 1)
 
@@ -607,13 +653,15 @@ export default class GameScene extends Phaser.Scene {
         this.showResult(this.lastResult)
         if (this.lastResult === 'goal') {
           this.playerPose = POSES.celebrate(0)
+          this.vibrate([30, 50, 60])
         } else {
           this.playerPose = POSES.sad(0)
+          this.vibrate(40)
         }
       }
     }
 
-    if (this.phase === 'result') {
+    if (this._phase === 'result') {
       this.resultTick++
       if (this.lastResult === 'goal') {
         this.playerPose = POSES.celebrate(this.resultTick)
@@ -622,10 +670,10 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    if (this.phase === 'player_idle' || this.phase === 'aiming' || this.phase === 'power') {
+    if (this._phase === 'player_idle' || this._phase === 'aiming' || this._phase === 'power') {
       this.keeperPose = POSES.keeperIdle(this.tick)
       this.playerPose = POSES.idle()
-      if (this.phase === 'aiming') {
+      if (this._phase === 'aiming') {
         this.keeperOffset = this.keeperLeanOffset
       } else {
         this.keeperOffset = 0
@@ -642,14 +690,14 @@ export default class GameScene extends Phaser.Scene {
 
     drawCharacter(ctx, this.KEEPER_X + this.keeperOffset, this.KEEPER_GROUND, this.keeperKit, this.keeperPose, true, true)
 
-    const showPlayer = this.phase !== 'game_over'
+    const showPlayer = this._phase !== 'game_over'
     if (showPlayer) {
       drawCharacter(ctx, this.PLAYER_X, this.PLAYER_GROUND, this.playerKit, this.playerPose, false, false, true)
     }
 
     const ballVisible = !['player_idle'].includes(this.phase)
     if (ballVisible) {
-      const ballR = this.phase === 'ball_flying'
+      const ballR = this._phase === 'ball_flying'
         ? Math.max(4, 10 * (1 - this.ballT * 0.3))
         : 10
       drawBall(ctx, this.ballX, this.ballY, ballR, this.ballRotation)
@@ -659,7 +707,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Aim cursor
     this.aimIndicator.clear()
-    if (this.phase === 'aiming') {
+    if (this._phase === 'aiming') {
       this.aimIndicator.lineStyle(2, 0xFFFF00, 0.9)
       this.aimIndicator.strokeCircle(this.aimX, this.aimY, 12)
       this.aimIndicator.lineStyle(1, 0xFFFF00, 0.5)
@@ -669,7 +717,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Composure ring
     this.composureRing.clear()
-    if (this.composureRingActive && this.phase === 'power') {
+    if (this.composureRingActive && this._phase === 'power') {
       const r = this.composureRingRadius
       const isSweet = r < 14
       const color = isSweet ? 0x00ff44 : 0xffffff
@@ -681,7 +729,7 @@ export default class GameScene extends Phaser.Scene {
     // Power bar
     this.powerBarBg.clear()
     this.powerBarFill.clear()
-    if (this.phase === 'power') {
+    if (this._phase === 'power') {
       const bw = W * 0.325
       const bh = Math.max(16, H * 0.037)
       const bx = W / 2 - bw / 2

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import XpBar from '@/components/profile/XpBar'
 import ShotHeatmap from '@/components/profile/ShotHeatmap'
 
@@ -26,6 +27,11 @@ interface PageProps {
   params: { username: string }
 }
 
+function DiffPill({ difficulty }: { difficulty: string }) {
+  const cls = `diff-pill diff-pill-${difficulty.toLowerCase()}`
+  return <span className={cls}>{difficulty}</span>
+}
+
 export default async function ProfilePage({ params }: PageProps) {
   const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
   const res = await fetch(
@@ -33,81 +39,159 @@ export default async function ProfilePage({ params }: PageProps) {
     { cache: 'no-store' }
   )
 
-  if (!res.ok) {
-    notFound()
-  }
+  if (!res.ok) notFound()
 
   const data: ProfileData = await res.json()
 
+  const statCards = [
+    { label: 'Total Goals', value: data.totalGoals },
+    { label: 'Games Played', value: data.gamesPlayed },
+    { label: 'Best Game', value: `${data.bestGame}/5` },
+    { label: 'Win Rate', value: `${data.winRate}%` },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
+    <div style={{
+      minHeight: '100dvh',
+      background: '#040d06',
+      backgroundImage: 'radial-gradient(ellipse 110% 55% at 50% -8%, #0d3320 0%, transparent 68%), linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)',
+      backgroundSize: '100% 100%, 72px 72px, 72px 72px',
+      overflowY: 'auto',
+    }}>
+      <div style={{ maxWidth: 560, margin: '0 auto', padding: 'clamp(20px,4vw,40px) 20px 60px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Back nav */}
+        <Link
+          href="/main"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            color: 'var(--text-muted)',
+            textDecoration: 'none',
+            letterSpacing: '0.2em',
+            alignSelf: 'flex-start',
+          }}
+        >
+          ← BACK
+        </Link>
+
         {/* Header card */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-black text-gray-900">{data.username}</h1>
-            <span className="bg-green-100 text-green-800 text-xs font-black px-2 py-1 rounded">
-              Lv.{data.level}
+        <div className="card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(22px,6vw,32px)',
+              color: '#fff',
+              letterSpacing: '0.04em',
+            }}>
+              {data.username}
+            </h1>
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.2em',
+              color: '#4ade80',
+              background: 'rgba(74,222,128,0.1)',
+              border: '1px solid rgba(74,222,128,0.3)',
+              padding: '3px 10px',
+              borderRadius: 20,
+            }}>
+              LV.{data.level}
             </span>
           </div>
           <XpBar xp={data.xp} level={data.level} />
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <p className="text-2xl font-black text-green-700">{data.totalGoals}</p>
-            <p className="text-xs text-gray-500 font-semibold mt-1">Total Goals</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <p className="text-2xl font-black text-green-700">{data.gamesPlayed}</p>
-            <p className="text-xs text-gray-500 font-semibold mt-1">Games Played</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <p className="text-2xl font-black text-green-700">{data.bestGame} / 5</p>
-            <p className="text-xs text-gray-500 font-semibold mt-1">Best Game</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm text-center">
-            <p className="text-2xl font-black text-green-700">{data.winRate}%</p>
-            <p className="text-xs text-gray-500 font-semibold mt-1">Win Rate</p>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {statCards.map(({ label, value }) => (
+            <div
+              key={label}
+              className="card"
+              style={{ padding: '16px 14px', textAlign: 'center' }}
+            >
+              <p style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 28,
+                color: '#4ade80',
+                letterSpacing: '0.03em',
+                lineHeight: 1,
+                textShadow: '0 0 16px rgba(74,222,128,0.25)',
+              }}>
+                {value}
+              </p>
+              <p className="label-mono" style={{ marginTop: 6, fontSize: 9 }}>{label}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Heatmap card */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        {/* Heatmap */}
+        <div className="card" style={{ padding: '20px' }}>
+          <p className="label-mono" style={{ marginBottom: 14 }}>SHOT HEATMAP</p>
           <ShotHeatmap heatmap={data.heatmap} />
         </div>
 
-        {/* Recent games card */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
-            Recent Games
-          </p>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400 text-xs font-semibold border-b pb-2">
-                <th className="pb-2">Date</th>
-                <th className="pb-2">Score</th>
-                <th className="pb-2">Difficulty</th>
-                <th className="pb-2 text-right">XP</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.recentGames.map((g) => (
-                <tr key={g.createdAt} className="border-b last:border-0">
-                  <td className="py-2 text-gray-600">
+        {/* Recent games */}
+        <div className="card" style={{ padding: '20px' }}>
+          <p className="label-mono" style={{ marginBottom: 14 }}>RECENT GAMES</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {data.recentGames.map((g, i) => (
+              <div
+                key={g.createdAt}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 0',
+                  borderBottom: i < data.recentGames.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                }}
+              >
+                {/* Score dot */}
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: g.goalsScored >= 4 ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: g.goalsScored >= 4 ? '1px solid rgba(74,222,128,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 16,
+                  color: g.goalsScored >= 4 ? '#4ade80' : 'rgba(255,255,255,0.7)',
+                  flexShrink: 0,
+                }}>
+                  {g.goalsScored}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
+                      {g.goalsScored}/{g.totalShots}
+                    </span>
+                    <DiffPill difficulty={g.difficulty} />
+                  </div>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
                     {new Date(g.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="py-2 text-gray-600">
-                    {g.goalsScored} / {g.totalShots}
-                  </td>
-                  <td className="py-2 text-gray-600 capitalize">{g.difficulty}</td>
-                  <td className="py-2 text-right text-green-700 font-bold">+{g.xpEarned}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </p>
+                </div>
+
+                <span style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#4ade80',
+                  letterSpacing: '0.1em',
+                  flexShrink: 0,
+                }}>
+                  +{g.xpEarned}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
+
       </div>
     </div>
   )

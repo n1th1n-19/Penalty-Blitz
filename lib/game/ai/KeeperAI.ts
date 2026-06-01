@@ -1,6 +1,10 @@
 import { Zone, Height, ShotRecord, coordToZone, coordToHeight } from '../types'
 import { NeuralNetwork } from './NeuralNetwork'
 import { PlayerProfiler } from './PlayerProfiler'
+import {
+  FuzzyModule, FuzzyVariable, FuzzyRule, FuzzyAND,
+  LeftShoulderFuzzySet, RightShoulderFuzzySet, TriangularFuzzySet,
+} from 'yuka'
 
 type ShotType = `${Zone}-${Height}`
 const ZONES: Zone[] = ['left', 'centre', 'right']
@@ -31,12 +35,51 @@ export class KeeperAI {
   private nn = new NeuralNetwork()
   private nnTrained = false
   private profiler = new PlayerProfiler()
+  private readonly fuzzyModule: FuzzyModule
   readonly playerId: string
 
   constructor() {
     this.playerId = this.getOrCreatePlayerId()
+    this.fuzzyModule = this.buildFuzzyModule()
     this.loadPersistent()
     this.fetchPopulationPrior()
+  }
+
+  private buildFuzzyModule(): FuzzyModule {
+    const fm = new FuzzyModule()
+
+    const flvConf = new FuzzyVariable()
+    const confLow  = new LeftShoulderFuzzySet(0, 0.25, 0.5)
+    const confMed  = new TriangularFuzzySet(0.25, 0.5, 0.75)
+    const confHigh = new RightShoulderFuzzySet(0.5, 0.75, 1)
+    flvConf.add(confLow).add(confMed).add(confHigh)
+    fm.addFLV('confidence', flvConf)
+
+    const flvWeight = new FuzzyVariable()
+    const wLow  = new LeftShoulderFuzzySet(0, 0.25, 0.5)
+    const wMed  = new TriangularFuzzySet(0.25, 0.5, 0.75)
+    const wHigh = new RightShoulderFuzzySet(0.5, 0.75, 1)
+    flvWeight.add(wLow).add(wMed).add(wHigh)
+    fm.addFLV('zoneWeight', flvWeight)
+
+    const flvDesir = new FuzzyVariable()
+    const dLow  = new LeftShoulderFuzzySet(0, 0.25, 0.5)
+    const dMed  = new TriangularFuzzySet(0.25, 0.5, 0.75)
+    const dHigh = new RightShoulderFuzzySet(0.5, 0.75, 1)
+    flvDesir.add(dLow).add(dMed).add(dHigh)
+    fm.addFLV('desirability', flvDesir)
+
+    fm.addRule(new FuzzyRule(new FuzzyAND(confHigh, wHigh), dHigh))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confHigh, wMed),  dMed))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confHigh, wLow),  dLow))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confMed,  wHigh), dMed))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confMed,  wMed),  dMed))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confMed,  wLow),  dLow))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confLow,  wHigh), dMed))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confLow,  wMed),  dLow))
+    fm.addRule(new FuzzyRule(new FuzzyAND(confLow,  wLow),  dLow))
+
+    return fm
   }
 
   private getOrCreatePlayerId(): string {
@@ -306,15 +349,33 @@ export class KeeperAI {
     const nnBlend     = nn ? (this.nnTrained ? 0.15 : 0) + Math.min(0.25, n * 0.05) : 0
     const freqBlend   = Math.max(0, 1 - markovBlend - nnBlend)
 
+    const rawAI = Object.fromEntries(
+      SHOT_TYPES.map(t => [
+        t,
+        freqBlend   * freq[t] +
+        markovBlend * (markov?.[t] ?? freq[t]) +
+        nnBlend     * (nn?.[t]     ?? freq[t])
+      ])
+    ) as Record<ShotType, number>
+
+    // Fuzzy inference: map (confidence, normalised zone weight) → dive desirability
+    const confidence = this.getConfidence()
+    const maxRaw = Math.max(...Object.values(rawAI))
+    this.fuzzyModule.fuzzify('confidence', confidence)
+    const desirabilities = Object.fromEntries(
+      SHOT_TYPES.map(t => {
+        const normW = maxRaw > 0 ? rawAI[t] / maxRaw : 1 / SHOT_TYPES.length
+        this.fuzzyModule.fuzzify('zoneWeight', normW)
+        return [t, this.fuzzyModule.defuzzify('desirability')]
+      })
+    ) as Record<ShotType, number>
+
     const uniform = 100 / SHOT_TYPES.length
+    const sumDesir = SHOT_TYPES.reduce((s, t) => s + desirabilities[t], 0)
     const weights = Object.fromEntries(
       SHOT_TYPES.map(t => [
         t,
-        aiWeight * (
-          freqBlend   * freq[t] +
-          markovBlend * (markov?.[t] ?? freq[t]) +
-          nnBlend     * (nn?.[t]     ?? freq[t])
-        ) + (1 - aiWeight) * uniform,
+        aiWeight * (sumDesir > 0 ? desirabilities[t] / sumDesir * 100 : uniform) + (1 - aiWeight) * uniform,
       ])
     ) as Record<ShotType, number>
 

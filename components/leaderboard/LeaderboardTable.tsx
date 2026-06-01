@@ -30,94 +30,165 @@ interface Props {
 }
 
 const METRIC_LABELS: { value: Metric; label: string }[] = [
-  { value: 'goals', label: 'Goals' },
-  { value: 'bestgame', label: 'Best Game' },
-  { value: 'winrate', label: 'Win Rate' },
-  { value: 'xp', label: 'XP' },
+  { value: 'goals',    label: 'Goals' },
+  { value: 'bestgame', label: 'Best' },
+  { value: 'winrate',  label: 'Win%' },
+  { value: 'xp',       label: 'XP' },
 ]
 
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: 'alltime', label: 'All Time' },
-  { value: 'month', label: 'This Month' },
-  { value: 'week', label: 'This Week' },
-  { value: 'today', label: 'Today' },
+  { value: 'month',   label: 'Month' },
+  { value: 'week',    label: 'Week' },
+  { value: 'today',   label: 'Today' },
 ]
 
 function formatPrimaryValue(metric: Metric, value: number): string {
-  if (metric === 'goals') return `${value} goals`
-  if (metric === 'bestgame') return `${value} / 5`
-  if (metric === 'winrate') return `${value}%`
-  return `${value} XP`
+  if (metric === 'goals')    return `${value}`
+  if (metric === 'bestgame') return `${value}/5`
+  if (metric === 'winrate')  return `${value}%`
+  return `${value}`
 }
 
 function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) {
+  const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
+  if (medals[rank]) {
     return (
-      <span className="inline-flex items-center justify-center w-10 h-7 rounded bg-yellow-400 text-yellow-900 font-black text-xs">
-        GOLD
-      </span>
-    )
-  }
-  if (rank === 2) {
-    return (
-      <span className="inline-flex items-center justify-center w-12 h-7 rounded bg-gray-300 text-gray-700 font-black text-xs">
-        SILVER
-      </span>
-    )
-  }
-  if (rank === 3) {
-    return (
-      <span className="inline-flex items-center justify-center w-14 h-7 rounded bg-amber-600 text-white font-black text-xs">
-        BRONZE
+      <span style={{ fontSize: 22, flexShrink: 0, width: 32, textAlign: 'center' }}>
+        {medals[rank]}
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center justify-center w-10 h-7 text-gray-500 font-mono text-sm">
+    <span style={{
+      flexShrink: 0,
+      width: 32,
+      textAlign: 'center',
+      fontFamily: 'var(--font-mono)',
+      fontSize: 12,
+      color: 'rgba(255,255,255,0.3)',
+      fontWeight: 700,
+    }}>
       #{rank}
     </span>
   )
 }
 
 function LeaderboardRow({
-  row,
-  metric,
-  isOwn,
-  showYouLabel,
+  row, metric, isOwn, showYouLabel,
 }: {
   row: Row
   metric: Metric
   isOwn: boolean
   showYouLabel: boolean
 }) {
-  const rowClass = isOwn
-    ? 'bg-green-50 border border-green-200'
-    : 'bg-white border border-gray-100'
-
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${rowClass}`}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '12px 16px',
+      borderRadius: 10,
+      background: isOwn ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)',
+      border: isOwn
+        ? '1px solid rgba(74,222,128,0.3)'
+        : '1px solid rgba(255,255,255,0.08)',
+      borderLeft: isOwn ? '3px solid #4ade80' : '1px solid rgba(255,255,255,0.08)',
+      transition: 'background 0.15s',
+    }}>
       <RankBadge rank={row.rank} />
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-gray-900 truncate">{row.username}</span>
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-mono text-xs">
-            Lv.{row.level}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 700,
+            fontSize: 13,
+            color: isOwn ? '#4ade80' : 'rgba(255,255,255,0.9)',
+            letterSpacing: '0.05em',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {row.username}
+          </span>
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.15em',
+            color: 'rgba(255,255,255,0.35)',
+            background: 'rgba(255,255,255,0.06)',
+            padding: '1px 6px',
+            borderRadius: 4,
+          }}>
+            LV.{row.level}
           </span>
           {showYouLabel && (
-            <span className="text-green-700 font-bold text-xs">YOU</span>
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.15em',
+              color: '#4ade80',
+            }}>
+              YOU
+            </span>
           )}
         </div>
         {metric !== 'winrate' && (
-          <p className="text-xs text-gray-400 mt-0.5">{row.winRate}% win rate</p>
+          <p style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--text-muted)',
+            marginTop: 2,
+            letterSpacing: '0.05em',
+          }}>
+            {row.winRate}% win rate
+          </p>
         )}
       </div>
 
-      <div className="text-right shrink-0">
-        <p className="font-black text-green-700 text-sm">
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <p style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 20,
+          color: isOwn ? '#4ade80' : 'rgba(255,255,255,0.85)',
+          letterSpacing: '0.03em',
+          textShadow: isOwn ? '0 0 12px rgba(74,222,128,0.3)' : 'none',
+        }}>
           {formatPrimaryValue(metric, row.primaryValue)}
         </p>
+        <p style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          color: 'var(--text-muted)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+        }}>
+          {metric === 'goals' ? 'goals' : metric === 'bestgame' ? 'best' : metric === 'winrate' ? 'win%' : 'xp'}
+        </p>
       </div>
+    </div>
+  )
+}
+
+function SkeletonRow() {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '12px 16px',
+      borderRadius: 10,
+      border: '1px solid rgba(255,255,255,0.06)',
+    }}>
+      <div className="skeleton" style={{ width: 32, height: 22, borderRadius: 4, flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <div className="skeleton" style={{ width: '45%', height: 13, marginBottom: 6 }} />
+        <div className="skeleton" style={{ width: '30%', height: 10 }} />
+      </div>
+      <div className="skeleton" style={{ width: 40, height: 20 }} />
     </div>
   )
 }
@@ -136,11 +207,11 @@ export default function LeaderboardTable({ myUserId }: Props) {
     setError(null)
 
     fetch(`/api/leaderboard?metric=${metric}&period=${period}`)
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json() as Promise<ApiResponse>
       })
-      .then((data) => {
+      .then(data => {
         if (cancelled) return
         setRows(data.rows)
         setMyRow(data.myRow)
@@ -153,88 +224,97 @@ export default function LeaderboardTable({ myUserId }: Props) {
         }
       })
 
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [metric, period])
 
-  const myRowVisibleInList = myRow != null && rows.some((r) => r.userId === myRow.userId)
+  const myRowVisibleInList = myRow != null && rows.some(r => r.userId === myRow.userId)
+
+  const btnStyle = (active: boolean): React.CSSProperties => ({
+    padding: '7px 14px',
+    borderRadius: 8,
+    fontFamily: 'var(--font-mono)',
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.15em',
+    textTransform: 'uppercase',
+    border: active ? '1px solid rgba(74,222,128,0.4)' : '1px solid rgba(255,255,255,0.08)',
+    background: active ? 'rgba(74,222,128,0.12)' : 'rgba(255,255,255,0.03)',
+    color: active ? '#4ade80' : 'rgba(255,255,255,0.4)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    flexShrink: 0,
+  })
 
   return (
-    <div className="space-y-4">
-      {/* Filter bar */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1 flex-wrap flex-1">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Metric tabs — scrollable on mobile */}
+      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ display: 'flex', gap: 6, minWidth: 'max-content' }}>
           {METRIC_LABELS.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => setMetric(value)}
-              className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                metric === value
-                  ? 'bg-green-700 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              style={btnStyle(metric === value)}
+            >
+              {label}
+            </button>
+          ))}
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.08)', margin: '0 4px', alignSelf: 'stretch' }} />
+          {PERIOD_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setPeriod(value)}
+              style={btnStyle(period === value)}
             >
               {label}
             </button>
           ))}
         </div>
-
-        <select
-          value={period}
-          onChange={(e) => setPeriod(e.target.value as Period)}
-          className="px-3 py-1.5 rounded border border-gray-200 bg-white text-sm text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-green-600"
-        >
-          {PERIOD_OPTIONS.map(({ value, label }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Win rate notice */}
       {metric === 'winrate' && (
-        <p className="text-xs text-gray-400">
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
           Win Rate requires at least 10 games to qualify.
         </p>
       )}
 
-      {/* Loading state */}
-      {loading ? (
-        <p className="text-center text-gray-400 py-12">Loading...</p>
-      ) : error ? (
-        <p className="text-center text-red-500 py-8">{error}</p>
-      ) : (
-        <div className="space-y-2">
-          {rows.length === 0 && (
-            <p className="text-center text-gray-400 py-12">No results yet.</p>
-          )}
-
-          {rows.map((row) => (
-            <LeaderboardRow
-              key={row.userId}
-              row={row}
-              metric={metric}
-              isOwn={row.userId === myUserId}
-              showYouLabel={row.userId === myUserId}
-            />
-          ))}
-
-          {/* Neighbourhood pinning */}
-          {myRow != null && !myRowVisibleInList && (
-            <>
-              <p className="text-center text-sm text-gray-300 py-1">...</p>
+      {/* Rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+        ) : error ? (
+          <p style={{ fontFamily: 'var(--font-mono)', color: '#f87171', textAlign: 'center', padding: '32px 0', fontSize: 12 }}>
+            {error}
+          </p>
+        ) : (
+          <>
+            {rows.length === 0 && (
+              <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', textAlign: 'center', padding: '48px 0', fontSize: 12, letterSpacing: '0.2em' }}>
+                NO RESULTS YET
+              </p>
+            )}
+            {rows.map(row => (
               <LeaderboardRow
-                row={myRow}
+                key={row.userId}
+                row={row}
                 metric={metric}
-                isOwn={true}
-                showYouLabel={true}
+                isOwn={row.userId === myUserId}
+                showYouLabel={row.userId === myUserId}
               />
-            </>
-          )}
-        </div>
-      )}
+            ))}
+            {myRow != null && !myRowVisibleInList && (
+              <>
+                <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', textAlign: 'center', fontSize: 12, letterSpacing: '0.2em' }}>
+                  · · ·
+                </p>
+                <LeaderboardRow row={myRow} metric={metric} isOwn={true} showYouLabel={true} />
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

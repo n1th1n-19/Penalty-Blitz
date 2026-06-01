@@ -13,16 +13,16 @@ export default function RegisterPage() {
   const passwordStrength = (p: string) => {
     if (p.length === 0) return 0
     let score = 0
-    if (p.length >= 8)  score++
-    if (/[A-Z]/.test(p)) score++
-    if (/[0-9]/.test(p)) score++
+    if (p.length >= 8)          score++
+    if (/[A-Z]/.test(p))        score++
+    if (/[0-9]/.test(p))        score++
     if (/[^A-Za-z0-9]/.test(p)) score++
     return score
   }
 
   const strength = passwordStrength(form.password)
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength]
-  const strengthColor = ['', 'bg-red-500', 'bg-yellow-400', 'bg-blue-500', 'bg-green-500'][strength]
+  const strengthColor = ['', '#ef4444', '#fbbf24', '#60a5fa', '#4ade80'][strength]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,28 +51,50 @@ export default function RegisterPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-lg font-bold text-gray-800">Create Account</h2>
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <h2 style={{
+        fontFamily: "'Space Mono', monospace",
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: '0.25em',
+        color: 'rgba(255,255,255,0.4)',
+        textTransform: 'uppercase',
+        textAlign: 'center',
+        marginBottom: 4,
+      }}>
+        CREATE ACCOUNT
+      </h2>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-2 text-sm">
+        <div style={{
+          background: 'rgba(239,68,68,0.1)',
+          border: '1px solid rgba(239,68,68,0.35)',
+          borderLeft: '3px solid #ef4444',
+          borderRadius: 8,
+          padding: '10px 14px',
+          fontFamily: "'Space Mono', monospace",
+          fontSize: 12,
+          color: '#fca5a5',
+          letterSpacing: '0.05em',
+        }}>
           {error}
         </div>
       )}
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label className="label-mono">Email</label>
         <input
           type="email"
           required
           value={form.email}
           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="input-dark"
+          placeholder="you@example.com"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label className="label-mono">Username</label>
         <input
           type="text"
           required
@@ -80,30 +102,49 @@ export default function RegisterPage() {
           maxLength={20}
           value={form.username}
           onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-          placeholder="3-20 chars, letters, numbers, underscores"
+          className="input-dark"
+          placeholder="3-20 chars"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label className="label-mono">Password</label>
         <input
           type="password"
           required
           minLength={8}
           value={form.password}
           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="input-dark"
+          placeholder="Min 8 characters"
         />
         {form.password.length > 0 && (
-          <div className="mt-1 flex items-center gap-2">
-            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all ${strengthColor}`}
-                style={{ width: `${(strength / 4) * 100}%` }}
-              />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            <div style={{
+              flex: 1,
+              height: 4,
+              background: 'rgba(255,255,255,0.08)',
+              borderRadius: 99,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${(strength / 4) * 100}%`,
+                background: strengthColor,
+                borderRadius: 99,
+                transition: 'width 0.3s, background 0.3s',
+              }} />
             </div>
-            <span className="text-xs text-gray-500">{strengthLabel}</span>
+            <span style={{
+              fontFamily: "'Space Mono', monospace",
+              fontSize: 10,
+              color: strengthColor,
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              minWidth: 40,
+            }}>
+              {strengthLabel}
+            </span>
           </div>
         )}
       </div>
@@ -111,14 +152,21 @@ export default function RegisterPage() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-green-700 hover:bg-green-600 text-white font-black py-3 rounded-xl tracking-widest disabled:opacity-50"
+        className="btn-primary"
+        style={{ opacity: loading ? 0.6 : 1, marginTop: 4 }}
       >
         {loading ? 'CREATING...' : 'CREATE ACCOUNT'}
       </button>
 
-      <p className="text-center text-sm text-gray-500">
+      <p style={{
+        fontFamily: "'Space Mono', monospace",
+        fontSize: 11,
+        color: 'var(--text-muted)',
+        textAlign: 'center',
+        letterSpacing: '0.1em',
+      }}>
         Already have an account?{' '}
-        <Link href="/login" className="text-green-700 font-semibold hover:underline">
+        <Link href="/login" style={{ color: '#4ade80', fontWeight: 700, textDecoration: 'none' }}>
           Sign in
         </Link>
       </p>
