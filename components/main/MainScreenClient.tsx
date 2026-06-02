@@ -64,27 +64,6 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
           <CharacterCanvas kit={currentKit} size={180} />
         </div>
 
-        {/* Kit info */}
-        <div style={{ textAlign: 'center' }}>
-          <p style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 18,
-            color: '#fff',
-            letterSpacing: '0.05em',
-            marginBottom: 4,
-          }}>
-            {currentKit.name}
-          </p>
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-            {[currentKit.primary, currentKit.secondary, currentKit.shorts, currentKit.socks].map((c, i) => (
-              <div key={i} style={{
-                width: 14, height: 14, borderRadius: 4,
-                background: c,
-                border: '1px solid rgba(255,255,255,0.15)',
-              }} />
-            ))}
-          </div>
-        </div>
 
         {/* Change kit button */}
         <button

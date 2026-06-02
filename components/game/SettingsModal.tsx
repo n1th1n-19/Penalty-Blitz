@@ -2,13 +2,9 @@
 import { useState } from 'react'
 import { audio } from '@/lib/game/audio'
 import { getControlScheme, setControlScheme, ControlScheme } from '@/lib/game/mobile-controls'
-import { DifficultyKey } from '@/lib/game/difficulty'
-
 interface Props {
   open: boolean
   onClose: () => void
-  defaultDifficulty: DifficultyKey
-  onDifficultyChange: (k: DifficultyKey) => void
   onControlsChange?: (s: ControlScheme) => void
   onReplayTutorial: () => void
 }
@@ -26,22 +22,16 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   )
 }
 
-const DIFF_COLORS: Record<DifficultyKey, string> = {
-  easy: '#4ade80', medium: '#f59e0b', hard: '#f87171',
-}
-
 export default function SettingsModal({
-  open, onClose, defaultDifficulty, onDifficultyChange, onControlsChange, onReplayTutorial,
+  open, onClose, onControlsChange, onReplayTutorial,
 }: Props) {
   const [muted, setMuted]   = useState(() => audio.isMuted())
   const [scheme, setScheme] = useState<ControlScheme>(() => getControlScheme())
-  const [diff, setDiff]     = useState<DifficultyKey>(defaultDifficulty)
 
   if (!open) return null
 
   const handleMute = () => { if (muted) audio.unmute(); else audio.mute(); setMuted(!muted) }
   const handleScheme = (s: ControlScheme) => { setControlScheme(s); setScheme(s); onControlsChange?.(s) }
-  const handleDiff = (k: DifficultyKey) => { setDiff(k); onDifficultyChange(k) }
 
   const CONTROLS: { key: ControlScheme; icon: string; label: string }[] = [
     { key: 'drag',     icon: '⤢',  label: 'Drag' },
@@ -133,40 +123,6 @@ export default function SettingsModal({
                 >
                   <span>{icon}</span>
                   <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Difficulty */}
-          <section>
-            <p className="settings-section-label">Difficulty</p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(['easy', 'medium', 'hard'] as DifficultyKey[]).map(k => (
-                <button
-                  key={k}
-                  onClick={() => handleDiff(k)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 6px',
-                    borderRadius: 8,
-                    border: diff === k
-                      ? `1px solid ${DIFF_COLORS[k]}`
-                      : '1px solid var(--border)',
-                    background: diff === k
-                      ? `${DIFF_COLORS[k]}18`
-                      : 'rgba(255,255,255,0.03)',
-                    color: diff === k ? DIFF_COLORS[k] : 'var(--text-muted)',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: '0.2em',
-                    textTransform: 'uppercase',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {k}
                 </button>
               ))}
             </div>

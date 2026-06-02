@@ -6,7 +6,6 @@ import { Kit } from '../../lib/game/types'
 import { CLUB_KITS } from '../../lib/game/kits'
 import JerseySelect from './JerseySelect'
 import ResultScreen from './ResultScreen'
-import DifficultySelect from './DifficultySelect'
 import SettingsModal from './SettingsModal'
 import { DifficultyKey, DifficultyConfig, DIFFICULTY } from '@/lib/game/difficulty'
 import { useSession } from 'next-auth/react'
@@ -15,7 +14,7 @@ import { xpBreakdown, type Difficulty } from '@/lib/xp'
 import { isTouchDevice, isFirstVisitMobile } from '@/lib/game/mobile-controls'
 import MobileGameHUD, { type GameSceneBridge } from './MobileGameHUD'
 
-type Screen = 'jersey' | 'difficulty' | 'game' | 'result'
+type Screen = 'jersey' | 'game' | 'result'
 
 interface XpResultData {
   goalXp: number
@@ -57,12 +56,12 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const sceneBridgeRef = useRef<GameSceneBridge | null>(null)
   const router = useRouter()
 
-  const [screen, setScreen]               = useState<Screen>(initialKit ? 'difficulty' : 'jersey')
+  const [screen, setScreen]               = useState<Screen>(initialKit ? 'game' : 'jersey')
   const [playerKit, setPlayerKit]         = useState<Kit>(initialKit ?? CLUB_KITS[0])
   const [finalScore, setFinalScore]       = useState({ player: 0, cpu: 0 })
-  const [difficulty, setDifficulty]       = useState<DifficultyKey>('medium')
+  const [difficulty, setDifficulty]       = useState<DifficultyKey>('hard')
   const [settingsOpen, setSettingsOpen]   = useState(false)
-  const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['medium'])
+  const [difficultyConfig, setDifficultyConfig] = useState<DifficultyConfig>(DIFFICULTY['hard'])
   const [xpResult, setXpResult]           = useState<XpResultData | null>(null)
   const [isTouch, setIsTouch]             = useState(false)
 
@@ -72,12 +71,20 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   // Detect touch device client-side
   useEffect(() => { setIsTouch(isTouchDevice()) }, [])
 
+  // Auto-start game when kit is pre-set (coming from main hub)
+  useEffect(() => {
+    if (initialKit) {
+      handleDifficultySelect('hard', initialKit)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const startGame = async (kit: Kit) => {
     setPlayerKit(kit)
-    setScreen('difficulty')
+    await handleDifficultySelect('hard', kit)
   }
 
-  const handleDifficultySelect = async (key: DifficultyKey) => {
+  const handleDifficultySelect = async (key: DifficultyKey, kitOverride?: Kit) => {
     const config = DIFFICULTY[key]
     setDifficulty(key)
     setDifficultyConfig(config)
@@ -100,7 +107,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
     const W = window.innerWidth
     const H = window.innerHeight
 
-    const kit = playerKit
+    const kit = kitOverride ?? playerKit
     const keeperKit = getKeeperKit(kit)
 
     const game = new Phaser.Game({
@@ -207,23 +214,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
         </div>
       )}
 
-      {screen === 'difficulty' && (
-        <div style={{ width: '100%', height: '100%' }}>
-          <DifficultySelect
-            onSelect={handleDifficultySelect}
-            onBack={() => {
-              if (initialKit) {
-                // came from main hub with a pre-set kit — go back to main
-                router.push('/main')
-              } else {
-                setScreen('jersey')
-              }
-            }}
-          />
-        </div>
-      )}
-
-      {screen === 'game' && (
+{screen === 'game' && (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           {/* Phaser canvas container */}
           <div
@@ -270,11 +261,6 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
           <SettingsModal
             open={settingsOpen}
             onClose={() => setSettingsOpen(false)}
-            defaultDifficulty={difficulty}
-            onDifficultyChange={(k) => {
-              setDifficulty(k)
-              getGameScene()?.setDifficultyConfig(DIFFICULTY[k])
-            }}
             onControlsChange={(s) => {
               getGameScene()?.setControlScheme(s)
             }}
@@ -301,7 +287,11 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
                 sceneBridgeRef.current = null
               }
               setXpResult(null)
-              setScreen(initialKit ? 'difficulty' : 'jersey')
+              if (initialKit) {
+                handleDifficultySelect('hard', initialKit)
+              } else {
+                setScreen('jersey')
+              }
             }}
             onMainMenu={() => {
               if (gameRef.current) {

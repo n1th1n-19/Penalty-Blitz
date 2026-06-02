@@ -44,18 +44,6 @@ function KitCard({ kit, selected, onSelect }: { kit: Kit; selected: boolean; onS
       }}
     >
       <canvas ref={canvasRef} width={80} height={110} style={{ display: 'block' }} />
-      <span style={{
-        fontSize: 9,
-        fontFamily: 'var(--font-mono)',
-        color: selected ? 'var(--green-accent)' : 'var(--text-muted)',
-        textAlign: 'center',
-        lineHeight: 1.2,
-        fontWeight: 700,
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-      }}>
-        {kit.shortName}
-      </span>
     </button>
   )
 }
@@ -102,25 +90,6 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
               <PreviewCanvas kit={selected} />
             </div>
 
-            <div style={{ textAlign: 'center' }}>
-              <p style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(16px, 3vw, 20px)',
-                color: '#fff',
-                letterSpacing: '0.04em',
-                marginBottom: 6,
-              }}>
-                {selected.name}
-              </p>
-              <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
-                {[selected.primary, selected.secondary, selected.shorts, selected.socks].map((c, i) => (
-                  <div key={i} style={{
-                    width: 16, height: 16, borderRadius: 4,
-                    background: c, border: '1px solid rgba(255,255,255,0.15)',
-                  }} />
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* CTA — hidden on mobile (sticky bottom used instead) */}
@@ -221,7 +190,7 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
           style={{ maxWidth: 400, pointerEvents: 'all' }}
           id="jersey-mobile-cta"
         >
-          {submitLabel} — {selected.shortName}
+          {submitLabel}
         </button>
       </div>
 

@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [form, setForm]     = useState({ email: '', password: '' })
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPw, setShowPw]   = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,14 +64,29 @@ export default function LoginPage() {
           <label className="label-mono">Password</label>
           <button type="button" className="btn-text" style={{ fontSize: 9 }}>Forgot?</button>
         </div>
-        <input
-          type="password" required
-          value={form.password}
-          onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-          className="input-dark"
-          placeholder="••••••••"
-          autoComplete="current-password"
-        />
+        <div style={{ position: 'relative' }}>
+          <input
+            type={showPw ? 'text' : 'password'} required
+            value={form.password}
+            onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+            className="input-dark"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            style={{ paddingRight: 44 }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPw(v => !v)}
+            style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+              letterSpacing: '0.1em', color: 'var(--text-muted)',
+            }}
+          >
+            {showPw ? 'HIDE' : 'SHOW'}
+          </button>
+        </div>
       </div>
 
       <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: 4, opacity: loading ? 0.65 : 1 }}>

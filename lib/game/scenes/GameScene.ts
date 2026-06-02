@@ -98,7 +98,6 @@ export default class GameScene extends Phaser.Scene {
   private resultText!: Phaser.GameObjects.Text
   private roundText!: Phaser.GameObjects.Text
   private instructText!: Phaser.GameObjects.Text
-  private aiReadText!: Phaser.GameObjects.Text
 
   private onGameOver?: (playerScore: number, totalRounds: number) => void
 
@@ -250,15 +249,6 @@ export default class GameScene extends Phaser.Scene {
       backgroundColor: '#00000088',
       padding: { x: 12, y: 6 },
     }).setOrigin(0.5).setDepth(20)
-
-    // AI read text
-    this.aiReadText = this.add.text(W - 10, H - 20, '', {
-      fontSize: '11px',
-      fontFamily: 'monospace',
-      color: '#FF8888',
-      stroke: '#000000',
-      strokeThickness: 2,
-    }).setOrigin(1, 1).setDepth(20)
 
     // Input
     this.cursors = this.input.keyboard!.createCursorKeys()
@@ -543,12 +533,6 @@ export default class GameScene extends Phaser.Scene {
     const roundLabel = `ROUND ${this.round} / ${this.maxRounds}`
     this.roundText.setText(roundLabel)
 
-    if (this.ai.getShotCount() > 0) {
-      const w = this.ai.getWeights()
-      this.aiReadText.setText(
-        `Keeper reads: L ${Math.round(w.left)}%  C ${Math.round(w.centre)}%  R ${Math.round(w.right)}%`
-      )
-    }
   }
 
   update(_time: number, _delta: number) {

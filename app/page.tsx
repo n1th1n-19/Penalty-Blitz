@@ -24,10 +24,7 @@ export default async function LandingPage() {
 
       {/* Action card */}
       <div className="landing-card slide-up-d2">
-        <Link href="/game" className="nav-btn nav-btn-play" style={{ borderRadius: 10 }}>
-          Play as Guest
-        </Link>
-        <Link href="/login" className="nav-btn" style={{ borderRadius: 10 }}>
+        <Link href="/login" className="nav-btn nav-btn-play" style={{ borderRadius: 10 }}>
           Sign In
         </Link>
         <Link href="/register" className="nav-btn" style={{ borderRadius: 10 }}>

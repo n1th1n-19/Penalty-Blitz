@@ -279,6 +279,21 @@ export const KITS: Kit[] = [
     collarColor: '#FFFFFF',
     numberColor: '#FFFFFF',
   },
+  {
+    id: 'india',
+    name: 'India',
+    shortName: 'INDIA',
+    type: 'country',
+    badge: 'IND',
+    primary: '#0033A0',
+    secondary: '#FFFFFF',
+    accent: '#FF9933',
+    shorts: '#0033A0',
+    socks: '#FF9933',
+    pattern: 'solid',
+    collarColor: '#FF9933',
+    numberColor: '#FFFFFF',
+  },
 ]
 
 export const CLUB_KITS = KITS.filter(k => k.type === 'club')

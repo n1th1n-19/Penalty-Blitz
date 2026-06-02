@@ -44,6 +44,7 @@ export default function RegisterPage() {
   const [form, setForm]     = useState({ email: '', username: '', password: '' })
   const [error, setError]   = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPw, setShowPw]   = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,8 +100,21 @@ export default function RegisterPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <label className="label-mono">Password</label>
-        <input type="password" required minLength={8} value={form.password}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label className="label-mono">Password</label>
+          <button
+            type="button"
+            onClick={() => setShowPw(v => !v)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+              letterSpacing: '0.1em', color: 'var(--text-muted)',
+            }}
+          >
+            {showPw ? 'HIDE' : 'SHOW'}
+          </button>
+        </div>
+        <input type={showPw ? 'text' : 'password'} required minLength={8} value={form.password}
           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
           className="input-dark" placeholder="Min 8 characters" autoComplete="new-password" />
         <StrengthBar password={form.password} />
