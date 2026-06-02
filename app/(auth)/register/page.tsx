@@ -56,7 +56,12 @@ export default function RegisterPage() {
       body: JSON.stringify(form),
     })
     if (!res.ok) { const d = await res.json(); setError(d.error); setLoading(false); return }
-    await signIn('credentials', { email: form.email, password: form.password, redirect: false })
+    const result = await signIn('credentials', {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    })
+    if (result?.error) { setError('Account created but sign-in failed. Please log in.'); setLoading(false); return }
     router.push('/main')
   }
 
