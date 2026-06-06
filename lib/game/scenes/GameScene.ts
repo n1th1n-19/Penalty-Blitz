@@ -288,7 +288,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private lockAim() {
-    this.powerSpeed = 1.8 * this.difficultyConfig.powerSpeed
+    const speedRamp = 1 + this.playerScore * 0.05
+    this.powerSpeed = 1.8 * this.difficultyConfig.powerSpeed * speedRamp
 
     const zoneWidth = (this.GOAL_RIGHT - this.GOAL_LEFT) / 3
     const relX = this.aimX - this.GOAL_LEFT
@@ -340,7 +341,9 @@ export default class GameScene extends Phaser.Scene {
     const inaccuracy = (1 - this.composureAccuracy) * 0.15
 
     // Keeper commits to a dive based on AI prediction — may be wrong zone entirely
-    const prediction = this.ai.predictShot(this.difficultyConfig.aiWeight)
+    const shotIndex = this.playerScore
+    const effectiveAiWeight = Math.min(1.0, 0.05 + shotIndex * 0.10)
+    const prediction = this.ai.predictShot(effectiveAiWeight)
     this.keeperDiveDir    = prediction.zone
     this.keeperDiveHeight = prediction.height
     this.keeperPredX = prediction.x
@@ -398,8 +401,9 @@ export default class GameScene extends Phaser.Scene {
     const dy = Math.abs(keeperScreenY - this.ballTargetY) / goalH
 
     const c = this.ai.getConfidence()
-    const reachX = 0.15 + c * 0.04
-    const reachY = 0.28 + c * 0.06
+    const sessionBonus = Math.min(0.06, this.playerScore * 0.008)
+    const reachX = 0.15 + c * 0.04 + sessionBonus
+    const reachY = 0.28 + c * 0.06 + sessionBonus * 1.5
 
     if (dx < reachX && dy < reachY) {
       const centeredness = 1 - Math.sqrt((dx / reachX) ** 2 + (dy / reachY) ** 2) * 0.5
