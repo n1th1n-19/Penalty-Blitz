@@ -54,6 +54,7 @@ export default class GameScene extends Phaser.Scene {
   private powerDir = 1
   private powerSpeed = 1.8
   private lockedPower = 0
+  private isMobile = false
   private lockedHeight: Height = 'bottom'
   private lockedShotX = 0.5
   private lockedShotY = 0.75
@@ -174,6 +175,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+
     const W = this.scale.width
     const H = this.scale.height
 
@@ -696,7 +699,7 @@ export default class GameScene extends Phaser.Scene {
     // Power bar
     this.powerBarBg.clear()
     this.powerBarFill.clear()
-    if (this._phase === 'power') {
+    if (this._phase === 'power' && !this.isMobile) {
       const bw = W * 0.325
       const bh = Math.max(16, H * 0.037)
       const bx = W / 2 - bw / 2
