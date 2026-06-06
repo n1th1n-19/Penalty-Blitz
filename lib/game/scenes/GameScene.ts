@@ -82,8 +82,6 @@ export default class GameScene extends Phaser.Scene {
 
   // Scores
   private playerScore = 0
-  private round = 1
-  private maxRounds = 5
 
   // Result
   private lastResult: 'goal' | 'saved' | 'missed' = 'goal'
@@ -99,7 +97,7 @@ export default class GameScene extends Phaser.Scene {
   private roundText!: Phaser.GameObjects.Text
   private instructText!: Phaser.GameObjects.Text
 
-  private onGameOver?: (playerScore: number, totalRounds: number) => void
+  private onGameOver?: (playerScore: number, totalShots: number) => void
 
   private difficultyConfig: DifficultyConfig = DIFFICULTY['medium']
   private controlScheme: ControlScheme = 'drag'
@@ -118,7 +116,6 @@ export default class GameScene extends Phaser.Scene {
     this.onGameOver = data.onGameOver
     this.ai = new KeeperAI()
     this.playerScore = 0
-    this.round = 1
     if (data.difficultyConfig) {
       this.difficultyConfig = data.difficultyConfig
     }
@@ -145,9 +142,7 @@ export default class GameScene extends Phaser.Scene {
     return gh > 0 ? (this.aimY - this.GOAL_Y_TOP) / gh : 0.5
   }
   get powerValue(): number { return this.power / 100 }
-  get roundNumber(): number { return this.round }
   get goals(): number { return this.playerScore }
-  get totalRounds(): number { return this.maxRounds }
 
   setAimFromNormalized(nx: number, ny: number) {
     this.aimX = this.GOAL_LEFT + nx * (this.GOAL_RIGHT - this.GOAL_LEFT)
@@ -483,27 +478,17 @@ export default class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(2200, () => {
       this.resultText.setAlpha(0)
-      this.round++
 
-      const gameOver = this.checkGameOver()
-      if (gameOver) return
+      if (result !== 'goal') {
+        this._phase = 'game_over'
+        this.time.delayedCall(500, () => {
+          if (this.onGameOver) this.onGameOver(this.playerScore, this.playerScore + 1)
+        })
+        return
+      }
 
       this.resetForNextRound()
     })
-  }
-
-  private checkGameOver(): boolean {
-    if (this.round > this.maxRounds) {
-      this._phase = 'game_over'
-      if (this.playerScore === this.maxRounds) {
-        audio.play('perfectFanfare')
-      }
-      this.time.delayedCall(500, () => {
-        if (this.onGameOver) this.onGameOver(this.playerScore, this.maxRounds)
-      })
-      return true
-    }
-    return false
   }
 
   private resetForNextRound() {
@@ -529,10 +514,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private updateScoreUI() {
-    this.scoreText.setText(`GOALS  ${this.playerScore} / ${this.maxRounds}`)
-    const roundLabel = `ROUND ${this.round} / ${this.maxRounds}`
-    this.roundText.setText(roundLabel)
-
+    this.scoreText.setText(`STREAK  ${this.playerScore}`)
+    this.roundText.setText('')
   }
 
   update(_time: number, _delta: number) {

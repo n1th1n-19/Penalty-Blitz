@@ -19,8 +19,8 @@ function KitCard({ kit, selected, onSelect }: { kit: Kit; selected: boolean; onS
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.clearRect(0, 0, 80, 110)
-    drawMiniCharacter(ctx, 40, 100, kit)
+    ctx.clearRect(0, 0, 64, 90)
+    drawMiniCharacter(ctx, 32, 82, kit)
   }, [kit])
 
   return (
@@ -29,21 +29,37 @@ function KitCard({ kit, selected, onSelect }: { kit: Kit; selected: boolean; onS
       style={{
         background: selected ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
         border: selected ? '2px solid var(--green-accent)' : '1px solid var(--border)',
-        borderRadius: 12,
-        padding: '8px 6px 6px',
+        borderRadius: 10,
+        padding: '6px 4px 5px',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 4,
+        gap: 3,
         transition: 'all 0.15s ease',
         transform: selected ? 'scale(1.04)' : 'scale(1)',
         boxShadow: selected ? '0 0 18px rgba(34,197,94,0.22)' : 'none',
         outline: 'none',
         WebkitTapHighlightColor: 'transparent',
+        width: '100%',
       }}
     >
-      <canvas ref={canvasRef} width={80} height={110} style={{ display: 'block' }} />
+      <canvas ref={canvasRef} width={64} height={90} style={{ display: 'block' }} />
+      <span style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 8,
+        fontWeight: 700,
+        letterSpacing: '0.05em',
+        color: selected ? 'var(--green-accent)' : 'var(--text-muted)',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        lineHeight: 1.2,
+        textAlign: 'center',
+      }}>
+        {kit.shortName}
+      </span>
     </button>
   )
 }
@@ -55,10 +71,10 @@ function PreviewCanvas({ kit }: { kit: Kit }) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.clearRect(0, 0, 140, 200)
-    drawMiniCharacter(ctx, 70, 180, kit)
+    ctx.clearRect(0, 0, 120, 170)
+    drawMiniCharacter(ctx, 60, 155, kit)
   }, [kit])
-  return <canvas ref={ref} width={140} height={200} style={{ display: 'block' }} />
+  return <canvas ref={ref} width={120} height={170} style={{ display: 'block' }} />
 }
 
 export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KICK OFF', onBack }: Props) {
@@ -157,7 +173,7 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
           <div className="jersey-grid-scroll">
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
               gap: 8,
             }}>
               {kits.map(kit => (

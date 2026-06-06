@@ -1,8 +1,6 @@
 'use client'
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import CharacterCanvas from './CharacterCanvas'
-import KitSelectModal from './KitSelectModal'
 import type { Kit } from '@/lib/game/types'
 import XpBar from '@/components/profile/XpBar'
 import Link from 'next/link'
@@ -24,11 +22,10 @@ const NAV_ITEMS = [
 
 export default function MainScreenClient({ username, level, xp, initialKit }: Props) {
   const router = useRouter()
-  const [currentKit, setCurrentKit] = useState<Kit>(initialKit)
-  const [kitModalOpen, setKitModalOpen] = useState(false)
+  const currentKit = initialKit
 
   const handleNav = (action?: string) => {
-    if (action === 'kit')     setKitModalOpen(true)
+    if (action === 'kit')     router.push('/kit-select')
     if (action === 'profile') router.push(`/profile/${username}`)
     if (action === 'signout') signOut({ callbackUrl: '/' })
   }
@@ -67,7 +64,7 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
 
         {/* Change kit button */}
         <button
-          onClick={() => setKitModalOpen(true)}
+          onClick={() => router.push('/kit-select')}
           className="btn-ghost"
           style={{ maxWidth: 200, fontSize: 10 }}
         >
@@ -143,12 +140,6 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
         </div>
       </div>
 
-      <KitSelectModal
-        open={kitModalOpen}
-        currentKit={currentKit}
-        onSave={setCurrentKit}
-        onClose={() => setKitModalOpen(false)}
-      />
     </div>
   )
 }

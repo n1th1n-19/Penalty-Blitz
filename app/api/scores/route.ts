@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     data: {
       userId:     session.user.id,
       goalsScored,
+      totalShots: goalsScored + 1,
       difficulty,
       xpEarned,
     },

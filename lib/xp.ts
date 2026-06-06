@@ -6,8 +6,6 @@ const XP_PER_GOAL: Record<Difficulty, number> = {
   hard:   25,
 }
 
-const PERFECT_BONUS = 50
-
 // Cumulative XP thresholds to reach each level
 // Level 1→2: 100, 2→3: 250, 3→4: 500, N→N+1: 500 + (N-3)*300
 function thresholdForLevel(level: number): number {
@@ -18,10 +16,15 @@ function thresholdForLevel(level: number): number {
   return 500 + (level - 4) * 300
 }
 
+function streakBonus(goals: number): number {
+  if (goals >= 10) return 50
+  if (goals >= 5)  return 25
+  return 0
+}
+
 export function calculateXp(goals: number, difficulty: Difficulty): number {
   const base = goals * XP_PER_GOAL[difficulty]
-  const bonus = goals === 5 ? PERFECT_BONUS : 0
-  return base + bonus
+  return base + streakBonus(goals)
 }
 
 export function calculateLevel(totalXp: number): number {
@@ -42,6 +45,6 @@ export function xpBreakdown(goals: number, difficulty: Difficulty): {
 } {
   const multiplier = XP_PER_GOAL[difficulty] / 10
   const goalXp = goals * XP_PER_GOAL[difficulty]
-  const bonusXp = goals === 5 ? PERFECT_BONUS : 0
+  const bonusXp = streakBonus(goals)
   return { goalXp, bonusXp, totalXp: goalXp + bonusXp, multiplier }
 }

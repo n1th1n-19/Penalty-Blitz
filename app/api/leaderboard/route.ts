@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-type Metric = 'goals' | 'bestgame' | 'winrate' | 'xp'
+type Metric = 'goals' | 'bestgame' | 'streak' | 'winrate' | 'xp'
 type Period = 'alltime' | 'month' | 'week' | 'today'
 
 function getPeriodStart(period: Period): Date | null {
@@ -39,28 +39,30 @@ export async function GET(req: NextRequest) {
 
   type Row = {
     userId: string; username: string; level: number
-    primaryValue: number; goals: number; winRate: number; bestGame: number; xp: number
+    primaryValue: number; goals: number; winRate: number; bestGame: number; bestStreak: number; xp: number
     gamesPlayed: number
   }
 
   const rows: Row[] = users
     .filter(u => u.scores.length > 0)
     .map(u => {
-      const goals    = u.scores.reduce((s, sc) => s + sc.goalsScored, 0)
-      const shots    = u.scores.reduce((s, sc) => s + sc.totalShots,  0)
-      const bestGame = Math.max(...u.scores.map(sc => sc.goalsScored))
-      const winRate  = shots > 0 ? Math.round((goals / shots) * 100) : 0
-      const xpTotal  = u.scores.reduce((s, sc) => s + sc.xpEarned, 0)
+      const goals      = u.scores.reduce((s, sc) => s + sc.goalsScored, 0)
+      const shots      = u.scores.reduce((s, sc) => s + sc.totalShots,  0)
+      const bestGame   = Math.max(...u.scores.map(sc => sc.goalsScored))
+      const bestStreak = bestGame
+      const winRate    = shots > 0 ? Math.round((goals / shots) * 100) : 0
+      const xpTotal    = u.scores.reduce((s, sc) => s + sc.xpEarned, 0)
 
       const primaryValue =
-        metric === 'goals'    ? goals    :
-        metric === 'bestgame' ? bestGame :
+        metric === 'goals'    ? goals      :
+        metric === 'bestgame' ? bestGame   :
+        metric === 'streak'   ? bestStreak :
         metric === 'winrate'  ? (u.scores.length >= 10 ? winRate : -1) :
         xpTotal
 
       return {
         userId: u.id, username: u.username, level: u.level,
-        primaryValue, goals, winRate, bestGame, xp: xpTotal,
+        primaryValue, goals, winRate, bestGame, bestStreak, xp: xpTotal,
         gamesPlayed: u.scores.length,
       }
     })
@@ -74,4 +76,5 @@ export async function GET(req: NextRequest) {
     : null
 
   return NextResponse.json({ rows: ranked.slice(0, 100), myRow, metric, period })
+
 }

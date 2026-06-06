@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-type Metric = 'goals' | 'bestgame' | 'winrate' | 'xp'
+type Metric = 'goals' | 'bestgame' | 'streak' | 'winrate' | 'xp'
 type Period = 'alltime' | 'month' | 'week' | 'today'
 
 interface Row {
@@ -13,6 +13,7 @@ interface Row {
   goals: number
   winRate: number
   bestGame: number
+  bestStreak: number
   xp: number
   gamesPlayed: number
 }
@@ -23,7 +24,7 @@ interface Props { myUserId?: string }
 
 const METRICS: { v: Metric; label: string }[] = [
   { v: 'goals',    label: 'Goals' },
-  { v: 'bestgame', label: 'Best Game' },
+  { v: 'streak',   label: 'Best Streak' },
   { v: 'winrate',  label: 'Win Rate' },
   { v: 'xp',       label: 'XP' },
 ]
@@ -35,7 +36,8 @@ const PERIODS: { v: Period; label: string }[] = [
 ]
 
 function formatValue(metric: Metric, v: number) {
-  if (metric === 'bestgame') return `${v}/5`
+  if (metric === 'streak')  return `${v} 🔥`
+  if (metric === 'bestgame') return `${v}`
   if (metric === 'winrate')  return `${v}%`
   return `${v}`
 }

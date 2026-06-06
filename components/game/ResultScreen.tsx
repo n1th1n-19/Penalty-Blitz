@@ -23,30 +23,27 @@ interface Props {
   onMainMenu: () => void
 }
 
-export default function ResultScreen({ playerScore, cpuScore: totalRounds, playerKit, xpResult, onRestart, onMainMenu }: Props) {
+export default function ResultScreen({ playerScore, cpuScore: totalShots, playerKit, xpResult, onRestart, onMainMenu }: Props) {
   const [visible, setVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t) }, [])
 
-  const ratio = playerScore / totalRounds
-  const isPerfect = ratio === 1
-
   const rating =
-    isPerfect ? 'PERFECT' :
-    ratio >= 0.8 ? 'EXCELLENT' :
-    ratio >= 0.6 ? 'GOOD' :
-    ratio >= 0.4 ? 'DECENT' : 'ROUGH DAY'
+    playerScore >= 10 ? 'LEGENDARY' :
+    playerScore >= 6  ? 'EXCELLENT' :
+    playerScore >= 3  ? 'GOOD' :
+    playerScore >= 1  ? 'DECENT' : 'ROUGH DAY'
 
   const ratingColor =
-    isPerfect ? 'var(--gold)' :
-    ratio >= 0.8 ? 'var(--green-accent)' :
-    ratio >= 0.6 ? '#60a5fa' :
-    ratio >= 0.4 ? '#f59e0b' : '#f87171'
+    playerScore >= 10 ? 'var(--gold)' :
+    playerScore >= 6  ? 'var(--green-accent)' :
+    playerScore >= 3  ? '#60a5fa' :
+    playerScore >= 1  ? '#f59e0b' : '#f87171'
 
   const comment =
-    isPerfect ? 'Flawless. The keeper never stood a chance.' :
-    ratio >= 0.8 ? 'Excellent shooting. Mix it up and they never read you.' :
-    ratio >= 0.6 ? 'Solid technique. A couple slipped away.' :
-    ratio >= 0.4 ? 'Mixed bag. Aim for the corners next time.' :
+    playerScore >= 10 ? 'Unstoppable. The keeper had no answer.' :
+    playerScore >= 6  ? 'Excellent shooting. Mix it up and they never read you.' :
+    playerScore >= 3  ? 'Solid technique. A few more and you\'re elite.' :
+    playerScore >= 1  ? 'Mixed bag. Aim for the corners next time.' :
     'The keeper read every shot. Change your pattern.'
 
   return (
@@ -72,7 +69,7 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
       }}>
         {/* Green header band */}
         <div style={{
-          background: isPerfect
+          background: playerScore >= 10
             ? 'linear-gradient(90deg, #7c3200, #92400e, #7c3200)'
             : 'linear-gradient(90deg, #0f3320, #14532d, #0f3320)',
           padding: '10px 20px',
@@ -80,8 +77,8 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <span className="label-mono" style={{ color: isPerfect ? 'var(--gold)' : 'var(--green-accent)', letterSpacing: '0.4em' }}>
-            FULL TIME
+          <span className="label-mono" style={{ color: playerScore >= 10 ? 'var(--gold)' : 'var(--green-accent)', letterSpacing: '0.4em' }}>
+            STREAK OVER
           </span>
           <span className="label-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
             {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
@@ -93,7 +90,7 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
           {visible && (
             <div className="pop-in" style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(38px,10vw,60px)',
+              fontSize: 'clamp(32px,9vw,54px)',
               color: ratingColor,
               letterSpacing: '0.04em',
               lineHeight: 1,
@@ -119,7 +116,7 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
             border: '1px solid var(--border)',
           }}>
             <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
-              <p className="label-mono" style={{ marginBottom: 4 }}>{playerKit.shortName}</p>
+              <p className="label-mono" style={{ marginBottom: 4 }}>STREAK</p>
               <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: ratingColor, lineHeight: 1 }}>
                 {playerScore}
               </p>
@@ -127,20 +124,25 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
             <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center' }}>
               <p className="label-mono" style={{ marginBottom: 4 }}>SHOTS</p>
               <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--text-muted)', lineHeight: 1 }}>
-                {totalRounds}
+                {totalShots}
               </p>
             </div>
           </div>
 
-          {/* Shot dots */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            {Array.from({ length: totalRounds }).map((_, i) => (
+          {/* Shot dots — cap at 10 visible */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {Array.from({ length: Math.min(totalShots, 10) }).map((_, i) => (
               <div
                 key={i}
                 className={`shot-dot${i < playerScore ? ' scored' : ' missed'}`}
                 style={{ width: 16, height: 16 }}
               />
             ))}
+            {totalShots > 10 && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
+                +{totalShots - 10}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -152,13 +154,13 @@ export default function ResultScreen({ playerScore, cpuScore: totalRounds, playe
           maxWidth: 480,
           padding: '18px 20px',
           marginBottom: 14,
-          borderLeft: isPerfect ? '3px solid var(--gold)' : '3px solid var(--green-accent)',
+          borderLeft: playerScore >= 10 ? '3px solid var(--gold)' : '3px solid var(--green-accent)',
         }}>
           <p className="label-mono" style={{ color: 'var(--green-accent)', marginBottom: 14 }}>XP EARNED</p>
 
           {[
             { label: `${playerScore} goals × ${xpResult.multiplier}`, value: `+${xpResult.goalXp}` },
-            ...(xpResult.bonusXp > 0 ? [{ label: 'Perfect game bonus', value: `+${xpResult.bonusXp}`, gold: true }] : []),
+            ...(xpResult.bonusXp > 0 ? [{ label: 'Streak milestone bonus', value: `+${xpResult.bonusXp}`, gold: true }] : []),
           ].map(({ label, value, gold }) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: gold ? 'var(--gold)' : 'var(--text-muted)' }}>

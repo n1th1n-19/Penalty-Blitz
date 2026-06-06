@@ -19,7 +19,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  *   scene.phase                          — 'aim' | 'power' | 'result' | 'idle'
  *   scene.aimNormX, scene.aimNormY      — current aim 0..1 within the goal
  *   scene.powerValue                    — 0..1 oscillating value
- *   scene.roundNumber, scene.goals      — progress stats
+ *   scene.goals                         — streak count
  *   scene.setAimFromNormalized(nx, ny)  — moves aim crosshair
  *   scene.confirmAim()                  — locks aim and starts power bar
  *   scene.confirmPower()                — locks power and fires shot
@@ -32,9 +32,7 @@ export interface GameSceneBridge {
   aimNormX:   number
   aimNormY:   number
   powerValue: number
-  roundNumber: number
   goals:      number
-  totalRounds: number
   setAimFromNormalized: (nx: number, ny: number) => void
   confirmAim:   () => void
   confirmPower: () => void
@@ -161,14 +159,12 @@ function PowerBar({ value }: { value: number }) {
 
 // ─── Main HUD ────────────────────────────────────────────────────────────────
 export default function MobileGameHUD({ sceneRef, onOpenSettings }: Props) {
-  const [phase,       setPhase]       = useState<GamePhase>('idle')
-  const [aimNormX,    setAimNormX]    = useState(0.5)
-  const [aimNormY,    setAimNormY]    = useState(0.5)
-  const [power,       setPower]       = useState(0)
-  const [round,       setRound]       = useState(1)
-  const [goals,       setGoals]       = useState(0)
-  const [totalRounds, setTotalRounds] = useState(5)
-  const [dragging,    setDragging]    = useState(false)
+  const [phase,    setPhase]    = useState<GamePhase>('idle')
+  const [aimNormX, setAimNormX] = useState(0.5)
+  const [aimNormY, setAimNormY] = useState(0.5)
+  const [power,    setPower]    = useState(0)
+  const [goals,    setGoals]    = useState(0)
+  const [dragging, setDragging] = useState(false)
   const goalZoneRef = useRef<HTMLDivElement>(null)
   const rafRef      = useRef<number>(0)
 
@@ -181,9 +177,7 @@ export default function MobileGameHUD({ sceneRef, onOpenSettings }: Props) {
         setAimNormX(s.aimNormX)
         setAimNormY(s.aimNormY)
         setPower(s.powerValue)
-        setRound(s.roundNumber)
         setGoals(s.goals)
-        setTotalRounds(s.totalRounds)
       }
       rafRef.current = requestAnimationFrame(poll)
     }
@@ -247,8 +241,8 @@ export default function MobileGameHUD({ sceneRef, onOpenSettings }: Props) {
     if (phase === 'power') sceneRef.current?.confirmPower()
   }, [phase, sceneRef])
 
-  // Dots for goals
-  const goalDots = Array.from({ length: totalRounds }, (_, i) => i < goals)
+  // Dots for goals — show up to 10 streak dots
+  const goalDots = Array.from({ length: Math.min(goals, 10) }, () => true)
 
   // ── Render ────────────────────────────────────────────────────────────────
   if (phase === 'idle' || phase === 'flying') return null
@@ -287,9 +281,9 @@ export default function MobileGameHUD({ sceneRef, onOpenSettings }: Props) {
           ))}
         </div>
 
-        {/* Round counter */}
+        {/* Streak counter */}
         <div className="mobile-hud-pill" id="score-display">
-          {goals} / {totalRounds} &nbsp;·&nbsp; RD {round}
+          STREAK &nbsp;{goals}
         </div>
 
         {/* Settings */}

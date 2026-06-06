@@ -31,8 +31,8 @@ export function createTutorial(onComplete: () => void, isMobile = false) {
         {
           element: '#score-display',
           popover: {
-            title:       '5 ROUNDS',
-            description: 'Score as many goals as you can in 5 rounds. Harder difficulty = more XP.',
+            title:       'STREAK MODE',
+            description: 'Keep scoring consecutive goals — your streak ends the moment you miss or the keeper saves. Harder difficulty = more XP.',
             side:        'bottom' as const,
           },
         },
@@ -65,8 +65,8 @@ export function createTutorial(onComplete: () => void, isMobile = false) {
         {
           element: '#score-display',
           popover: {
-            title:       '5 ROUNDS',
-            description: 'Score as many goals as you can in 5 rounds. Harder difficulty earns more XP.',
+            title:       'STREAK MODE',
+            description: 'Keep scoring consecutive goals — your streak ends the moment you miss or the keeper saves. Harder difficulty earns more XP.',
             side:        'bottom' as const,
           },
         },
