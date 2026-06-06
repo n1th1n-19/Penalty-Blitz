@@ -64,7 +64,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const [xpResult, setXpResult]           = useState<XpResultData | null>(null)
   const [isTouch, setIsTouch]             = useState(false)
 
-  const { data: session } = useSession()
+  const { data: session, update: updateSession } = useSession()
   const { back, updateUser } = useSystemStore()
   const tutorialFiredRef  = useRef(false)
 
@@ -195,6 +195,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
     const timer = setTimeout(() => {
       const t = createTutorial(() => {
         fetch('/api/auth/tutorial-seen', { method: 'PATCH' }).catch(() => {})
+        updateSession({ hasSeenTutorial: true })
       }, mobile)
       t.drive()
     }, 1500)
