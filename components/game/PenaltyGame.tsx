@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useSystemStore } from '@/store/systemStore'
 import type Phaser from 'phaser'
 import { Kit } from '../../lib/game/types'
 import { CLUB_KITS } from '../../lib/game/kits'
@@ -54,7 +54,6 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const containerRef   = useRef<HTMLDivElement>(null)
   const gameRef        = useRef<Phaser.Game | null>(null)
   const sceneBridgeRef = useRef<GameSceneBridge | null>(null)
-  const router = useRouter()
 
   const [screen, setScreen]               = useState<Screen>(initialKit ? 'game' : 'jersey')
   const [playerKit, setPlayerKit]         = useState<Kit>(initialKit ?? CLUB_KITS[0])
@@ -66,6 +65,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
   const [isTouch, setIsTouch]             = useState(false)
 
   const { data: session } = useSession()
+  const { back, updateUser } = useSystemStore()
   const tutorialFiredRef  = useRef(false)
 
   // Detect touch device client-side
@@ -150,6 +150,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
                         newLevel:   apiData.newLevel,
                         leveledUp:  apiData.leveledUp,
                       })
+                      updateUser({ xp: apiData.totalXp, level: apiData.newLevel })
                     } else {
                       setXpResult(null)
                     }
@@ -209,7 +210,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
         <div style={{ width: '100%', height: '100%' }}>
           <JerseySelect
             onSelect={startGame}
-            onBack={() => router.push(session ? '/main' : '/')}
+            onBack={back}
           />
         </div>
       )}
@@ -299,7 +300,7 @@ export default function PenaltyGame({ initialKit }: PenaltyGameProps) {
                 gameRef.current = null
                 sceneBridgeRef.current = null
               }
-              router.push(session ? '/main' : '/')
+              back()
             }}
           />
         </div>

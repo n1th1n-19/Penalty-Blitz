@@ -1,45 +1,24 @@
 'use client'
-import { useRouter } from 'next/navigation'
-import CharacterCanvas from './CharacterCanvas'
-import type { Kit } from '@/lib/game/types'
+import { useSystemStore } from '@/store/systemStore'
+import CharacterCanvas from '@/components/main/CharacterCanvas'
 import XpBar from '@/components/profile/XpBar'
-import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 
-interface Props {
-  username: string
-  level: number
-  xp: number
-  initialKit: Kit
-}
+export default function MainScreen() {
+  const { user, navigate } = useSystemStore()
 
-const NAV_ITEMS = [
-  { href: '/leaderboard', icon: '◈', label: 'Leaderboard' },
-  { href: '', icon: '◉', label: 'Customize', action: 'kit' as const },
-  { href: '', icon: '◎', label: 'My Profile', action: 'profile' as const },
-  { href: '', icon: '⊘', label: 'Sign Out', action: 'signout' as const },
-]
+  if (!user) return null
 
-export default function MainScreenClient({ username, level, xp, initialKit }: Props) {
-  const router = useRouter()
-  const currentKit = initialKit
-
-  const handleNav = (action?: string) => {
-    if (action === 'kit')     router.push('/kit-select')
-    if (action === 'profile') router.push(`/profile/${username}`)
-    if (action === 'signout') signOut({ callbackUrl: '/' })
-  }
+  const { username, level, xp, kit } = user
 
   return (
     <div className="hub-root">
       {/* ── Left — Character panel ────────────────────────────────── */}
       <div className="hub-left slide-up">
-        {/* Small brand */}
         <p className="label-mono" style={{ color: 'var(--green-accent)', letterSpacing: '0.4em', marginBottom: 8 }}>
           PENALTY BLITZ
         </p>
 
-        {/* Character */}
         <div style={{
           position: 'relative',
           display: 'flex',
@@ -47,7 +26,6 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
           alignItems: 'center',
           gap: 0,
         }}>
-          {/* Glow disc behind character */}
           <div style={{
             position: 'absolute',
             bottom: 20,
@@ -58,13 +36,11 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
             filter: 'blur(8px)',
             pointerEvents: 'none',
           }} />
-          <CharacterCanvas kit={currentKit} size={180} />
+          <CharacterCanvas kit={kit} size={180} />
         </div>
 
-
-        {/* Change kit button */}
         <button
-          onClick={() => router.push('/kit-select')}
+          onClick={() => navigate({ screen: 'kit-select' })}
           className="btn-ghost"
           style={{ maxWidth: 200, fontSize: 10 }}
         >
@@ -106,7 +82,11 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
         </div>
 
         {/* Play card */}
-        <Link href="/game" className="hub-play-card slide-up-d1">
+        <button
+          onClick={() => navigate({ screen: 'game' })}
+          className="hub-play-card slide-up-d1"
+          style={{ width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer' }}
+        >
           <div>
             <p className="label-mono" style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>
               Ready to compete?
@@ -122,24 +102,47 @@ export default function MainScreenClient({ username, level, xp, initialKit }: Pr
             </p>
           </div>
           <div className="hub-play-arrow">&#9658;</div>
-        </Link>
+        </button>
 
         {/* Nav grid */}
         <div className="hub-nav-grid slide-up-d2">
-          {NAV_ITEMS.map(({ href, icon, label, action }) => (
-            <button
-              key={label}
-              onClick={() => href ? router.push(href) : handleNav(action)}
-              className="hub-nav-item"
-              style={{ border: 'none', textAlign: 'left' }}
-            >
-              <div className="hub-nav-icon">{icon}</div>
-              <span className="hub-nav-label">{label}</span>
-            </button>
-          ))}
+          <button
+            onClick={() => navigate({ screen: 'leaderboard' })}
+            className="hub-nav-item"
+            style={{ border: 'none', textAlign: 'left' }}
+          >
+            <div className="hub-nav-icon">◈</div>
+            <span className="hub-nav-label">Leaderboard</span>
+          </button>
+
+          <button
+            onClick={() => navigate({ screen: 'kit-select' })}
+            className="hub-nav-item"
+            style={{ border: 'none', textAlign: 'left' }}
+          >
+            <div className="hub-nav-icon">◉</div>
+            <span className="hub-nav-label">Customize</span>
+          </button>
+
+          <button
+            onClick={() => navigate({ screen: 'profile', username })}
+            className="hub-nav-item"
+            style={{ border: 'none', textAlign: 'left' }}
+          >
+            <div className="hub-nav-icon">◎</div>
+            <span className="hub-nav-label">My Profile</span>
+          </button>
+
+          <button
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="hub-nav-item"
+            style={{ border: 'none', textAlign: 'left' }}
+          >
+            <div className="hub-nav-icon">⊘</div>
+            <span className="hub-nav-label">Sign Out</span>
+          </button>
         </div>
       </div>
-
     </div>
   )
 }

@@ -1,12 +1,12 @@
 'use client'
-import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import { useSystemStore } from '@/store/systemStore'
 import type { Kit } from '@/lib/game/types'
 
 const JerseySelect = dynamic(() => import('@/components/game/JerseySelect'), { ssr: false })
 
-export default function KitSelectClient({ initialKitId }: { initialKitId: string }) {
-  const router = useRouter()
+export default function KitSelectScreen() {
+  const { user, back, updateUser } = useSystemStore()
 
   const handleSelect = async (kit: Kit) => {
     await fetch('/api/avatar-kit', {
@@ -14,15 +14,16 @@ export default function KitSelectClient({ initialKitId }: { initialKitId: string
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ kitId: kit.id }),
     })
-    router.push('/main')
+    updateUser({ kit })
+    back()
   }
 
   return (
     <JerseySelect
-      initialKitId={initialKitId}
+      initialKitId={user?.kit.id}
       submitLabel="SAVE KIT"
       onSelect={handleSelect}
-      onBack={() => router.push('/main')}
+      onBack={back}
     />
   )
 }

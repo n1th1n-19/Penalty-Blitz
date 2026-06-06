@@ -79,10 +79,10 @@ function PreviewCanvas({ kit }: { kit: Kit }) {
 
 export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KICK OFF', onBack }: Props) {
   const resolved = initialKitId
-    ? ([...CLUB_KITS, ...COUNTRY_KITS].find(k => k.id === initialKitId) ?? CLUB_KITS[0])
-    : CLUB_KITS[0]
+    ? ([...COUNTRY_KITS, ...CLUB_KITS].find(k => k.id === initialKitId) ?? COUNTRY_KITS[0])
+    : COUNTRY_KITS[0]
 
-  const [tab, setTab] = useState<'club' | 'country'>(resolved.type === 'country' ? 'country' : 'club')
+  const [tab, setTab] = useState<'club' | 'country'>(resolved.type === 'club' ? 'club' : 'country')
   const [selected, setSelected] = useState<Kit>(resolved)
   const kits = tab === 'club' ? CLUB_KITS : COUNTRY_KITS
 
@@ -158,7 +158,7 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
               </h1>
             </div>
             <div className="tabs">
-              {(['club', 'country'] as const).map(t => (
+              {(['country', 'club'] as const).map(t => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
