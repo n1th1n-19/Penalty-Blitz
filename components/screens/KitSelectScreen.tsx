@@ -12,7 +12,11 @@ export default function KitSelectScreen() {
     await fetch('/api/avatar-kit', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kitId: kit.id }),
+      body: JSON.stringify({
+        kitId: kit.id,
+        playerName: kit.playerName,
+        playerNumber: kit.playerNumber,
+      }),
     })
     updateUser({ kit })
     back()
@@ -21,6 +25,8 @@ export default function KitSelectScreen() {
   return (
     <JerseySelect
       initialKitId={user?.kit.id}
+      initialPlayerName={user?.kit.playerName}
+      initialPlayerNumber={user?.kit.playerNumber}
       submitLabel="SAVE KIT"
       onSelect={handleSelect}
       onBack={back}

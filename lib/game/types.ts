@@ -32,6 +32,8 @@ export interface Kit {
   stripeColor?: string
   collarColor?: string
   numberColor: string
+  playerName?: string
+  playerNumber?: number
 }
 
 export interface GameState {

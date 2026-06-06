@@ -301,14 +301,22 @@ function drawTorso(
     ctx.font = `bold ${h * 0.32}px monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('10', cx, cy + h * 0.1)
+    ctx.fillText(kit.playerNumber !== undefined ? String(kit.playerNumber) : '10', cx, cy + h * 0.1)
   } else {
-    // Back number
     ctx.fillStyle = kit.numberColor
-    ctx.font = `bold ${h * 0.32}px monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('10', cx, cy + h * 0.05)
+    if (kit.playerName) {
+      const nameFontSize = Math.max(8, h * 0.18)
+      const numFontSize = Math.max(9, h * 0.30)
+      ctx.font = `bold ${nameFontSize}px monospace`
+      ctx.fillText(kit.playerName.toUpperCase(), cx, cy - h * 0.20)
+      ctx.font = `bold ${numFontSize}px monospace`
+      ctx.fillText(kit.playerNumber !== undefined ? String(kit.playerNumber) : '10', cx, cy + h * 0.20)
+    } else {
+      ctx.font = `bold ${h * 0.32}px monospace`
+      ctx.fillText(kit.playerNumber !== undefined ? String(kit.playerNumber) : '10', cx, cy + h * 0.10)
+    }
   }
 
   // Re-outline

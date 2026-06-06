@@ -16,6 +16,8 @@ model User {
   xp              Int      @default(0)
   level           Int      @default(1)
   avatarKitId     String?  @map("avatar_kit_id")
+  playerName      String?  @map("player_name")
+  playerNumber    Int?     @map("player_number")
   hasSeenTutorial Boolean  @default(false) @map("has_seen_tutorial")
   createdAt       DateTime @default(now()) @map("created_at")
   scores          Score[]

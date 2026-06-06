@@ -7,6 +7,8 @@ import { drawMiniCharacter } from '../../lib/game/CharacterRenderer'
 interface Props {
   onSelect: (kit: Kit) => void
   initialKitId?: string
+  initialPlayerName?: string
+  initialPlayerNumber?: number
   submitLabel?: string
   onBack?: () => void
 }
@@ -77,22 +79,34 @@ function PreviewCanvas({ kit }: { kit: Kit }) {
   return <canvas ref={ref} width={120} height={170} style={{ display: 'block' }} />
 }
 
-export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KICK OFF', onBack }: Props) {
+export default function JerseySelect({
+  onSelect,
+  initialKitId,
+  initialPlayerName,
+  initialPlayerNumber,
+  submitLabel = 'KICK OFF',
+  onBack,
+}: Props) {
   const resolved = initialKitId
     ? ([...COUNTRY_KITS, ...CLUB_KITS].find(k => k.id === initialKitId) ?? COUNTRY_KITS[0])
     : COUNTRY_KITS[0]
 
   const [tab, setTab] = useState<'club' | 'country'>(resolved.type === 'club' ? 'club' : 'country')
   const [selected, setSelected] = useState<Kit>(resolved)
+  const [playerName, setPlayerName] = useState(initialPlayerName ?? '')
+  const [playerNumber, setPlayerNumber] = useState(initialPlayerNumber ?? 10)
+
   const kits = tab === 'club' ? CLUB_KITS : COUNTRY_KITS
+  const augmentedKit: Kit = { ...selected, playerName: playerName || undefined, playerNumber }
+
+  const handleConfirm = () => onSelect(augmentedKit)
 
   return (
     <div className="jersey-root">
       <div className="jersey-split">
         {/* ── Left / top: live preview ── */}
         <div className="jersey-preview">
-          {/* Desktop: full vertical preview */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%' }}>
             <p className="label-mono" style={{ color: 'var(--green-accent)' }}>Selected Kit</p>
 
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
@@ -103,14 +117,42 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
                 filter: 'blur(6px)',
                 pointerEvents: 'none',
               }} />
-              <PreviewCanvas kit={selected} />
+              <PreviewCanvas kit={augmentedKit} />
             </div>
 
+            {/* Name + Number inputs */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div>
+                <span className="label-mono" style={{ display: 'block', marginBottom: 4 }}>Player Name</span>
+                <input
+                  className="input-dark"
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value.toUpperCase().slice(0, 10))}
+                  placeholder="YOUR NAME"
+                  maxLength={10}
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </div>
+              <div>
+                <span className="label-mono" style={{ display: 'block', marginBottom: 4 }}>Squad No.</span>
+                <input
+                  className="input-dark"
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={playerNumber}
+                  onChange={e => {
+                    const n = parseInt(e.target.value)
+                    if (!isNaN(n) && n >= 1 && n <= 99) setPlayerNumber(n)
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* CTA — hidden on mobile (sticky bottom used instead) */}
           <button
-            onClick={() => onSelect(selected)}
+            onClick={handleConfirm}
             className="btn-primary"
             style={{ display: 'none' }}
             id="jersey-desktop-cta"
@@ -194,14 +236,14 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
         position: 'fixed',
         bottom: 0, left: 0, right: 0,
         padding: 'max(12px, env(safe-area-inset-bottom)) 16px 16px',
-        background: 'linear-gradient(to top, #050e07 55%, transparent)',
+        background: 'linear-gradient(to top, #04071a 55%, transparent)',
         zIndex: 20,
         display: 'flex',
         justifyContent: 'center',
         pointerEvents: 'none',
       }}>
         <button
-          onClick={() => onSelect(selected)}
+          onClick={handleConfirm}
           className="btn-primary"
           style={{ maxWidth: 400, pointerEvents: 'all' }}
           id="jersey-mobile-cta"
@@ -214,6 +256,9 @@ export default function JerseySelect({ onSelect, initialKitId, submitLabel = 'KI
         @media (min-width: 640px) {
           #jersey-mobile-cta { display: none !important; }
         }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
       `}</style>
     </div>
   )
