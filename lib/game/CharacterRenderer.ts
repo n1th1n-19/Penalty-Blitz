@@ -297,13 +297,13 @@ function drawTorso(
     ctx.fillRect(cx - w * 0.2, y, w * 0.4, h * 0.12)
 
     // Number
-    ctx.fillStyle = kit.numberColor
+    ctx.fillStyle = kit.numberColor ?? '#fff'
     ctx.font = `bold ${h * 0.32}px monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(kit.playerNumber !== undefined ? String(kit.playerNumber) : '10', cx, cy + h * 0.1)
   } else {
-    ctx.fillStyle = kit.numberColor
+    ctx.fillStyle = kit.numberColor ?? '#fff'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     if (kit.playerName) {
@@ -361,11 +361,11 @@ function drawLeg(
 
   // Upper leg (shorts)
   const upperH = h * 0.45
-  drawBlock(ctx, -w / 2, 0, w, upperH, kit.shorts, 2)
+  drawBlock(ctx, -w / 2, 0, w, upperH, kit.shorts ?? kit.secondary, 2)
 
   // Lower leg (sock)
   const lowerH = h * 0.45
-  drawBlock(ctx, -w / 2, upperH + 2, w, lowerH, kit.socks, 2)
+  drawBlock(ctx, -w / 2, upperH + 2, w, lowerH, kit.socks ?? kit.primary, 2)
 
   // Boot
   const bootColor = '#2C2C2C'

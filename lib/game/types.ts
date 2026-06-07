@@ -20,18 +20,22 @@ export function coordToHeight(y: number): Height {
 export interface Kit {
   id: string
   name: string
-  shortName: string
-  type: 'club' | 'country'
-  badge: string
   primary: string
   secondary: string
-  accent: string
-  shorts: string
-  socks: string
+  trim: string
   pattern: 'solid' | 'stripes' | 'hoops' | 'half' | 'diagonal' | 'sash'
+  unlocked: boolean
+  req?: string
+  // legacy fields kept for compatibility
+  shortName?: string
+  type?: 'club' | 'country'
+  badge?: string
+  accent?: string
+  shorts?: string
+  socks?: string
   stripeColor?: string
   collarColor?: string
-  numberColor: string
+  numberColor?: string
   playerName?: string
   playerNumber?: number
 }

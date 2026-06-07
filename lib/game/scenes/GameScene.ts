@@ -259,6 +259,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(600, () => {
       this._phase = 'aiming'
+      audio.play('crowdLoop')
       audio.play('crowdHush')
       this.instructText.setText('TOUCH GOAL TO AIM   |   TAP TO CONFIRM')
     })
@@ -444,6 +445,7 @@ export default class GameScene extends Phaser.Scene {
       this.cameras.main.shake(300, 0.006)
       audio.play('goalCheer')
       audio.play('goalHorn')
+      if (this.playerScore === 5) audio.play('perfectFanfare')
 
       // Floating score pop
       const popText = this.add.text(this.ballX, this.ballY - 20, '+1 GOAL', {
@@ -478,6 +480,7 @@ export default class GameScene extends Phaser.Scene {
       audio.play('save')
     } else {
       audio.play('missWhoosh')
+      audio.play('missGroan')
     }
 
     this.resultText.setAlpha(1)
@@ -487,6 +490,7 @@ export default class GameScene extends Phaser.Scene {
       this.resultText.setAlpha(0)
 
       if (result !== 'goal') {
+        audio.stop('crowdLoop')
         this._phase = 'game_over'
         this.time.delayedCall(500, () => {
           if (this.onGameOver) this.onGameOver(this.playerScore, this.playerScore + 1)
@@ -725,6 +729,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   destroy() {
+    audio.stop('crowdLoop')
     this.input.off('pointerdown', this.handlePointerDown, this)
     this.input.off('pointermove', this.handlePointerMove, this)
   }

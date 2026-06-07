@@ -2,96 +2,60 @@ import Link from 'next/link'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="auth-shell">
+    <div className="auth-shell pb-stadium" style={{ height: '100dvh' }}>
       {/* Left — branding panel (desktop only) */}
-      <div className="auth-brand">
-        {/* Decorative goal post lines */}
+      <div className="auth-brand pb-stadium">
+        {/* Floodlight halos */}
         <div style={{
-          position: 'absolute',
-          top: '15%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '60%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 0,
-          opacity: 0.06,
-          pointerEvents: 'none',
+          position: 'absolute', top: -110, left: -90,
+          width: 'clamp(200px,34vw,360px)', height: 'clamp(200px,34vw,360px)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,217,199,0.14) 0%, transparent 70%)',
+          pointerEvents: 'none', animation: 'pb-halo 4.6s ease-in-out infinite',
+        }}/>
+        <div style={{
+          position: 'absolute', top: -110, right: -90,
+          width: 'clamp(200px,34vw,360px)', height: 'clamp(200px,34vw,360px)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(200,255,0,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none', animation: 'pb-halo 4.6s ease-in-out infinite 2.3s',
+        }}/>
+
+        <Link href="/" style={{
+          position: 'absolute', top: 24, left: 24,
+          fontFamily: 'var(--font-mono)', fontSize: 10,
+          color: 'var(--txt-3)', textDecoration: 'none',
+          letterSpacing: '0.2em', display: 'flex', alignItems: 'center', gap: 6,
+          transition: 'color .15s', zIndex: 2,
         }}>
-          <div style={{ width: '100%', height: 3, background: '#fff' }} />
-          <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between' }}>
-            <div style={{ width: 3, height: 80, background: '#fff' }} />
-            <div style={{ width: 3, height: 80, background: '#fff' }} />
-          </div>
-        </div>
+          ← HOME
+        </Link>
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <p className="label-mono" style={{ marginBottom: 16, color: 'var(--green-accent)' }}>
-            The #1 penalty game
+          <p className="mono-label" style={{ color: 'var(--lime)', letterSpacing: '0.4em', marginBottom: 14 }}>
+            Penalty Blitz
           </p>
-          <div style={{ marginBottom: 24 }}>
-            <span className="title-solid" style={{ fontSize: 'clamp(48px, 8vw, 80px)' }}>PENALTY</span>
-            <span className="title-outline" style={{ fontSize: 'clamp(48px, 8vw, 80px)' }}>BLITZ</span>
-          </div>
-          <p style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 13,
-            color: 'var(--text-muted)',
-            letterSpacing: '0.05em',
-            lineHeight: 1.8,
-            maxWidth: 280,
-          }}>
-            Five shots. One keeper.<br />
-            An AI that learns your every move.<br />
-            Can you outsmart it?
+          <h1 className="display" style={{ fontSize: 'clamp(40px,5vw,72px)', color: '#fff', lineHeight: 0.92, marginBottom: 18 }}>
+            STEP UP<br />TO THE<br /><span style={{ color: 'var(--lime)' }}>SPOT.</span>
+          </h1>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--txt-2)', maxWidth: 340, lineHeight: 1.6 }}>
+            Read the keeper. Pick your corner. Stack the longest streak on the planet.
           </p>
-
-          <div style={{ display: 'flex', gap: 16, marginTop: 32 }}>
-            {[
-              { n: '50K+', l: 'Players' },
-              { n: '2M+',  l: 'Shots Fired' },
-              { n: '99%',  l: 'Keeper Win Rate' },
-            ].map(({ n, l }) => (
-              <div key={l}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--green-accent)' }}>{n}</div>
-                <div className="label-mono" style={{ marginTop: 2 }}>{l}</div>
-              </div>
-            ))}
-          </div>
         </div>
-
-        {/* Back to home */}
-        <Link href="/" style={{
-          position: 'absolute',
-          top: 24,
-          left: 24,
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          color: 'var(--text-muted)',
-          textDecoration: 'none',
-          letterSpacing: '0.2em',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          transition: 'color 0.15s',
-        }}>
-          &larr; HOME
-        </Link>
       </div>
 
       {/* Right — form panel */}
-      <div className="auth-form-panel">
+      <div className="auth-form-panel pb-stadium">
         {/* Mobile brand header */}
-        <div style={{ marginBottom: 28, textAlign: 'center' }} className="slide-up">
+        <div style={{ marginBottom: 28, textAlign: 'center' }} className="a-slide">
           <Link href="/" style={{ textDecoration: 'none' }}>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#fff', letterSpacing: '0.06em' }}>
+            <span className="display" style={{ fontSize: 28, color: '#fff', letterSpacing: '0.06em' }}>
               PENALTY BLITZ
             </span>
           </Link>
         </div>
 
-        <div className="auth-form-inner slide-up-d1">
+        <div className="auth-form-inner a-slide-1">
           {children}
         </div>
       </div>

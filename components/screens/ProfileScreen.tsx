@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useSystemStore } from '@/store/systemStore'
+import { Icon, Jersey } from '@/components/ui/PbUi'
+import { getKit } from '@/lib/game/kits'
+import type { NeonKit } from '@/components/ui/PbUi'
 import XpBar from '@/components/profile/XpBar'
 import ShotHeatmap from '@/components/profile/ShotHeatmap'
 
@@ -12,6 +15,7 @@ interface ProfileData {
   totalGoals: number
   totalShots: number
   bestGame: number
+  bestStreak: number
   winRate: number
   gamesPlayed: number
   heatmap: Record<string, number>
@@ -30,152 +34,111 @@ export default function ProfileScreen({ username }: { username: string }) {
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    setData(null)
-    setError(false)
+    setData(null); setError(false)
     fetch(`/api/profile/${encodeURIComponent(username)}`)
       .then(r => { if (!r.ok) throw new Error(); return r.json() })
       .then(setData)
       .catch(() => setError(true))
   }, [username])
 
-  return (
-    <div style={{
-      minHeight: '100dvh',
-      background: 'var(--bg-base)',
-      backgroundImage: 'var(--stadium-bg), var(--stadium-grid)',
-      backgroundSize: '100% 100%, 72px 72px, 72px 72px',
-      overflowY: 'auto',
-    }}>
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: 'clamp(20px,4vw,40px) 20px 60px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+  const kit = getKit(data?.avatarKitId ?? 'lime')
 
-        <button
-          onClick={back}
-          style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)',
-            background: 'none', border: 'none', cursor: 'pointer',
-            letterSpacing: '0.2em', alignSelf: 'flex-start',
-            display: 'flex', alignItems: 'center', gap: 6, padding: 0,
-          }}
-        >
-          &larr; BACK
+  return (
+    <div className="pb-stadium" style={{ minHeight: '100dvh', overflowY: 'auto' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: 'clamp(20px,4vw,40px) 20px 60px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <button onClick={back} className="pb-btn pb-btn-ghost" style={{ padding: '10px 16px', alignSelf: 'flex-start' }}>
+          <Icon name="back" size={14} /> Back
         </button>
 
         {error && (
-          <div className="card" style={{ padding: '24px 22px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-            Profile not found.
+          <div className="pb-card a-slide" style={{ padding: '24px 22px' }}>
+            <p className="mono-label" style={{ color: 'var(--danger)' }}>Profile not found.</p>
           </div>
         )}
 
         {!error && !data && (
-          <div className="card" style={{ padding: '24px 22px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-            Loading...
+          <div className="pb-card a-slide" style={{ padding: '24px 22px' }}>
+            <p className="mono-label" style={{ animation: 'pb-pulse 1.5s ease-in-out infinite' }}>LOADING...</p>
           </div>
         )}
 
         {data && (
           <>
             {/* Hero card */}
-            <div className="card slide-up" style={{ padding: '24px 22px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div>
-                  <p className="label-mono" style={{ marginBottom: 6 }}>Player</p>
-                  <h1 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(26px,7vw,40px)',
-                    color: '#fff',
-                    letterSpacing: '0.04em',
-                    lineHeight: 1,
-                  }}>
-                    {data.username}
-                  </h1>
-                </div>
-                <div style={{
-                  padding: '8px 16px',
-                  background: 'rgba(34,197,94,0.10)',
-                  border: '1px solid rgba(34,197,94,0.3)',
-                  borderRadius: 20,
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: 'var(--green-accent)',
-                  letterSpacing: '0.2em',
-                  flexShrink: 0,
-                }}>
-                  LV.{data.level}
-                </div>
+            <div className="pb-card a-slide" style={{ padding: '24px 22px', display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div style={{ flexShrink: 0 }}>
+                <Jersey kit={kit as NeonKit} size={80} glow={false} num={9} />
               </div>
-              <XpBar xp={data.xp} level={data.level} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div>
+                    <p className="mono-label" style={{ marginBottom: 5 }}>Player</p>
+                    <h1 className="display" style={{ fontSize: 'clamp(24px,6vw,38px)', color: '#fff', lineHeight: 1 }}>{data.username}</h1>
+                  </div>
+                  <span className="pb-pill" style={{ background: 'rgba(200,255,0,0.1)', border: '1px solid var(--bd-lime)', color: 'var(--lime)', fontSize: 12, padding: '6px 14px', flexShrink: 0 }}>
+                    LV.{data.level}
+                  </span>
+                </div>
+                <XpBar xp={data.xp} level={data.level} />
+              </div>
             </div>
 
             {/* Stats grid */}
-            <div className="slide-up-d1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="a-slide-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {[
-                { label: 'Total Goals',  value: data.totalGoals.toLocaleString() },
-                { label: 'Games Played', value: data.gamesPlayed.toLocaleString() },
-                { label: 'Best Game',    value: `${data.bestGame}/5` },
-                { label: 'Win Rate',     value: `${data.winRate}%` },
-              ].map(({ label, value }) => (
-                <div key={label} className="stat-card">
-                  <div className="stat-card-value">{value}</div>
+                { label: 'Best Streak', value: data.bestStreak ?? 0, color: 'var(--lime)' },
+                { label: 'Total Goals',  value: data.totalGoals,    color: 'var(--cyan)' },
+                { label: 'Games Played', value: data.gamesPlayed,   color: 'var(--gold)' },
+                { label: 'Win Rate',     value: `${data.winRate}%`, color: 'var(--txt-2)' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="stat-card" style={{ borderLeft: `2px solid ${color}22` }}>
+                  <div className="stat-card-value" style={{ color }}>{value}</div>
                   <div className="stat-card-label">{label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Heatmap */}
-            <div className="card slide-up-d2" style={{ padding: '20px' }}>
-              <p className="label-mono" style={{ marginBottom: 14 }}>Shot Heatmap</p>
-              <ShotHeatmap heatmap={data.heatmap} />
-            </div>
+            {/* Bottom two-col on desktop */}
+            <div
+              className="a-slide-2"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}
+            >
+              {/* Shot heatmap */}
+              <div className="pb-card" style={{ padding: '20px 22px' }}>
+                <p className="mono-label" style={{ marginBottom: 14 }}>Shot Heatmap</p>
+                <ShotHeatmap heatmap={data.heatmap} />
+              </div>
 
-            {/* Recent games */}
-            <div className="card slide-up-d3" style={{ padding: '20px' }}>
-              <p className="label-mono" style={{ marginBottom: 16 }}>Recent Games</p>
-              <div style={{ position: 'relative', paddingLeft: 20 }}>
-                <div style={{
-                  position: 'absolute', left: 6, top: 0, bottom: 0,
-                  width: 1, background: 'var(--border)',
-                }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  {data.recentGames.map((g, i) => {
-                    const ratio = g.goalsScored / g.totalShots
-                    const dotColor = ratio >= 0.8 ? 'var(--green-accent)' : ratio >= 0.5 ? 'var(--gold)' : '#f87171'
-                    const diffKey = g.difficulty.toLowerCase()
-                    return (
-                      <div key={g.createdAt} style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 14,
-                        paddingBottom: i < data.recentGames.length - 1 ? 16 : 0,
-                        position: 'relative',
-                      }}>
-                        <div style={{
-                          position: 'absolute', left: -14, top: 6,
-                          width: 9, height: 9, borderRadius: '50%',
-                          background: dotColor, border: `1px solid ${dotColor}44`,
-                          flexShrink: 0, boxShadow: `0 0 6px ${dotColor}55`,
-                        }} />
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              {/* Recent runs */}
+              <div className="pb-card" style={{ padding: '20px 22px' }}>
+                <p className="mono-label" style={{ marginBottom: 16 }}>Recent Runs</p>
+                {data.recentGames.length === 0 ? (
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--txt-3)' }}>No games yet.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {data.recentGames.map((g, i) => {
+                      const diffKey = g.difficulty.toLowerCase()
+                      return (
+                        <div key={g.createdAt + i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                                {g.goalsScored}/{g.totalShots}
-                              </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: '#fff' }}>{g.goalsScored}</span>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--txt-3)' }}>streak</span>
                               <span className={`diff-pill diff-pill-${diffKey}`}>{g.difficulty}</span>
                             </div>
-                            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
-                              {new Date(g.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--txt-3)', letterSpacing: '0.1em' }}>
+                              {new Date(g.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                             </p>
                           </div>
-                          <span style={{
-                            fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
-                            color: 'var(--green-accent)', letterSpacing: '0.1em', flexShrink: 0,
-                          }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: 'var(--lime)', flexShrink: 0 }}>
                             +{g.xpEarned} XP
                           </span>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </>

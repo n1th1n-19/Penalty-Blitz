@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Kit } from '../../lib/game/types'
-import XpBar from '@/components/profile/XpBar'
+import { Icon, XpBar, Jersey } from '@/components/ui/PbUi'
+import type { NeonKit } from '@/components/ui/PbUi'
+import type { ShotRecord } from '@/components/screens/GameScreen'
 
-interface XpResultData {
+interface XpResult {
   goalXp: number
   bonusXp: number
   totalXp: number
@@ -15,205 +16,175 @@ interface XpResultData {
 }
 
 interface Props {
-  playerScore: number
-  cpuScore: number
-  playerKit: Kit
-  xpResult?: XpResultData | null
+  streak: number
+  shots: number
+  shotHistory: ShotRecord[]
+  xpResult?: XpResult | null
+  kit: NeonKit
   onRestart: () => void
   onMainMenu: () => void
 }
 
-export default function ResultScreen({ playerScore, cpuScore: totalShots, playerKit, xpResult, onRestart, onMainMenu }: Props) {
+const RATINGS = [
+  { min: 12, label: 'LEGENDARY', color: 'var(--gold)' },
+  { min: 8,  label: 'CLINICAL',  color: 'var(--lime)' },
+  { min: 5,  label: 'SHARP',     color: 'var(--cyan)' },
+  { min: 2,  label: 'DECENT',    color: '#60a5fa' },
+  { min: 0,  label: 'ROUGH',     color: 'var(--danger)' },
+]
+
+const COMMENTS: Record<string, string> = {
+  LEGENDARY: 'Unstoppable. The keeper had no answer.',
+  CLINICAL:  'Clinical shooting. You mixed it up perfectly.',
+  SHARP:     'Solid technique. A few more and you\'re elite.',
+  DECENT:    'Mixed bag. Aim for the corners next time.',
+  ROUGH:     'The keeper read every shot. Change your pattern.',
+}
+
+export default function ResultScreen({ streak, shots, shotHistory, xpResult, kit, onRestart, onMainMenu }: Props) {
   const [visible, setVisible] = useState(false)
   useEffect(() => { const t = setTimeout(() => setVisible(true), 80); return () => clearTimeout(t) }, [])
 
-  const rating =
-    playerScore >= 10 ? 'LEGENDARY' :
-    playerScore >= 6  ? 'EXCELLENT' :
-    playerScore >= 3  ? 'GOOD' :
-    playerScore >= 1  ? 'DECENT' : 'ROUGH DAY'
+  const { label: rating, color: ratingColor } = RATINGS.find(r => streak >= r.min) ?? RATINGS[4]
+  const comment = COMMENTS[rating]
+  const isLegendary = streak >= 12
 
-  const ratingColor =
-    playerScore >= 10 ? 'var(--gold)' :
-    playerScore >= 6  ? 'var(--green-accent)' :
-    playerScore >= 3  ? '#60a5fa' :
-    playerScore >= 1  ? '#f59e0b' : '#f87171'
-
-  const comment =
-    playerScore >= 10 ? 'Unstoppable. The keeper had no answer.' :
-    playerScore >= 6  ? 'Excellent shooting. Mix it up and they never read you.' :
-    playerScore >= 3  ? 'Solid technique. A few more and you\'re elite.' :
-    playerScore >= 1  ? 'Mixed bag. Aim for the corners next time.' :
-    'The keeper read every shot. Change your pattern.'
+  const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()
 
   return (
-    <div style={{
-      minHeight: '100dvh',
-      background: 'var(--bg-base)',
-      backgroundImage: 'var(--stadium-bg)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'clamp(20px,4vw,40px) 20px max(32px, calc(env(safe-area-inset-bottom) + 24px))',
-      gap: 0,
-      overflowY: 'auto',
-    }}>
-
-      {/* ── Scoreboard card ──────────────────────────────────── */}
-      <div className="card slide-up" style={{
-        width: '100%',
-        maxWidth: 480,
-        overflow: 'hidden',
-        marginBottom: 14,
-      }}>
-        {/* Green header band */}
+    <div
+      className="pb-stadium"
+      style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: 'clamp(20px,4vw,40px) 20px max(32px, calc(env(safe-area-inset-bottom) + 24px))',
+        gap: 12, overflowY: 'auto',
+      }}
+    >
+      {/* ── Scoreboard card ── */}
+      <div className="pb-card a-slide" style={{ width: '100%', maxWidth: 480, overflow: 'hidden', padding: 0 }}>
+        {/* Header band */}
         <div style={{
-          background: playerScore >= 10
-            ? 'linear-gradient(90deg, #7c3200, #92400e, #7c3200)'
-            : 'linear-gradient(90deg, #0f3320, #14532d, #0f3320)',
+          background: isLegendary
+            ? 'linear-gradient(90deg, #4d2600, #7c3d00, #4d2600)'
+            : 'linear-gradient(90deg, #071a09, #0c2a10, #071a09)',
           padding: '10px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <span className="label-mono" style={{ color: playerScore >= 10 ? 'var(--gold)' : 'var(--green-accent)', letterSpacing: '0.4em' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.4em', color: isLegendary ? 'var(--gold)' : 'var(--lime)' }}>
             STREAK OVER
           </span>
-          <span className="label-mono" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', color: 'var(--txt-3)' }}>
+            {dateStr}
           </span>
         </div>
 
-        <div style={{ padding: '24px 20px 20px' }}>
+        <div style={{ padding: '24px 22px 20px' }}>
           {/* Rating */}
           {visible && (
-            <div className="pop-in" style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(32px,9vw,54px)',
-              color: ratingColor,
-              letterSpacing: '0.04em',
-              lineHeight: 1,
-              marginBottom: 8,
-              textShadow: `0 0 32px ${ratingColor}44`,
-            }}>
+            <div
+              className="a-pop"
+              style={{
+                fontFamily: 'var(--font-display)', fontSize: 'clamp(34px,9vw,54px)',
+                color: ratingColor, letterSpacing: '0.04em', lineHeight: 1, marginBottom: 8,
+                textShadow: `0 0 32px ${ratingColor}55`,
+              }}
+            >
               {rating}
             </div>
           )}
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 20 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--txt-3)', letterSpacing: '0.05em', marginBottom: 22 }}>
             {comment}
           </p>
 
           {/* Score row */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0,
-            marginBottom: 20,
-            background: 'rgba(0,0,0,0.25)',
-            borderRadius: 10,
-            overflow: 'hidden',
-            border: '1px solid var(--border)',
-          }}>
-            <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
-              <p className="label-mono" style={{ marginBottom: 4 }}>STREAK</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: ratingColor, lineHeight: 1 }}>
-                {playerScore}
-              </p>
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--bd)', marginBottom: 20 }}>
+            <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center', borderRight: '1px solid var(--bd)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.3em', color: 'var(--txt-3)', marginBottom: 6 }}>STREAK</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: ratingColor, lineHeight: 1 }}>{streak}</p>
             </div>
             <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center' }}>
-              <p className="label-mono" style={{ marginBottom: 4 }}>SHOTS</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--text-muted)', lineHeight: 1 }}>
-                {totalShots}
-              </p>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.3em', color: 'var(--txt-3)', marginBottom: 6 }}>SHOTS</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--txt-2)', lineHeight: 1 }}>{shots}</p>
             </div>
           </div>
 
-          {/* Shot dots — cap at 10 visible */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {Array.from({ length: Math.min(totalShots, 10) }).map((_, i) => (
-              <div
-                key={i}
-                className={`shot-dot${i < playerScore ? ' scored' : ' missed'}`}
-                style={{ width: 16, height: 16 }}
-              />
-            ))}
-            {totalShots > 10 && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
-                +{totalShots - 10}
-              </span>
-            )}
-          </div>
+          {/* Shot dots */}
+          {shotHistory.length > 0 && (
+            <div style={{ display: 'flex', gap: 7, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {shotHistory.slice(0, 12).map((s, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 14, height: 14, borderRadius: '50%',
+                    background: s.result === 'goal' ? 'var(--lime)' : 'var(--danger)',
+                    boxShadow: s.result === 'goal' ? '0 0 6px rgba(200,255,0,0.7)' : '0 0 6px rgba(255,77,77,0.7)',
+                  }}
+                />
+              ))}
+              {shotHistory.length > 12 && (
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--txt-3)' }}>
+                  +{shotHistory.length - 12}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── XP panel ─────────────────────────────────────────── */}
+      {/* ── XP card ── */}
       {xpResult && (
-        <div className="card slide-up-d1" style={{
-          width: '100%',
-          maxWidth: 480,
-          padding: '18px 20px',
-          marginBottom: 14,
-          borderLeft: playerScore >= 10 ? '3px solid var(--gold)' : '3px solid var(--green-accent)',
-        }}>
-          <p className="label-mono" style={{ color: 'var(--green-accent)', marginBottom: 14 }}>XP EARNED</p>
+        <div
+          className="pb-card a-slide-1"
+          style={{
+            width: '100%', maxWidth: 480, padding: '18px 22px',
+            borderLeft: `3px solid ${isLegendary ? 'var(--gold)' : 'var(--lime)'}`,
+          }}
+        >
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.35em', color: 'var(--lime)', marginBottom: 14 }}>XP EARNED</p>
 
           {[
-            { label: `${playerScore} goals × ${xpResult.multiplier}`, value: `+${xpResult.goalXp}` },
+            { label: `${streak} goals × ${xpResult.multiplier}`, value: `+${xpResult.goalXp}` },
             ...(xpResult.bonusXp > 0 ? [{ label: 'Streak milestone bonus', value: `+${xpResult.bonusXp}`, gold: true }] : []),
           ].map(({ label, value, gold }) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: gold ? 'var(--gold)' : 'var(--text-muted)' }}>
-                {label}
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: gold ? 'var(--gold)' : 'var(--text-secondary)' }}>
-                {value} XP
-              </span>
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: gold ? 'var(--gold)' : 'var(--txt-3)' }}>{label}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: gold ? 'var(--gold)' : 'var(--txt-2)' }}>{value} XP</span>
             </div>
           ))}
 
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 4,
-          }}>
-            <span className="label-mono">Total</span>
-            <span style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 26,
-              color: 'var(--green-accent)',
-              textShadow: '0 0 16px rgba(34,197,94,0.3)',
-            }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--bd)', paddingTop: 10, marginTop: 4, marginBottom: 14 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--txt-3)' }}>TOTAL</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--lime)', textShadow: '0 0 16px rgba(200,255,0,0.35)' }}>
               +{xpResult.totalXp} XP
             </span>
           </div>
 
           {xpResult.leveledUp && (
-            <div className="level-up-anim" style={{
-              marginTop: 12,
-              padding: '10px 14px',
-              background: 'rgba(245,158,11,0.1)',
-              border: '1px solid rgba(245,158,11,0.3)',
-              borderRadius: 8,
-              fontFamily: 'var(--font-display)',
-              fontSize: 20,
-              color: 'var(--gold)',
-              letterSpacing: '0.05em',
-              textAlign: 'center',
+            <div style={{
+              marginBottom: 14, padding: '10px 14px',
+              background: 'rgba(255,213,74,0.1)', border: '1px solid rgba(255,213,74,0.3)',
+              borderRadius: 10, textAlign: 'center',
+              fontFamily: 'var(--font-display)', fontSize: 20,
+              color: 'var(--gold)', letterSpacing: '0.05em',
+              animation: 'pb-pop 0.5s cubic-bezier(0.34,1.56,0.64,1)',
             }}>
               LEVEL {xpResult.newLevel} REACHED
             </div>
           )}
 
-          <div style={{ marginTop: 12 }}>
-            <XpBar xp={xpResult.newTotalXp} level={xpResult.newLevel} />
-          </div>
+          <XpBar xp={xpResult.newTotalXp} />
         </div>
       )}
 
-      {/* ── Actions ───────────────────────────────────────────── */}
-      <div className="slide-up-d2" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <button onClick={onRestart} className="btn-primary">Play Again</button>
-        <button onClick={onMainMenu} className="btn-ghost">Main Menu</button>
+      {/* ── Actions ── */}
+      <div className="a-slide-2" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <button onClick={onRestart} className="pb-btn pb-btn-primary" style={{ width: '100%' }}>
+          <Icon name="play" size={15} /> Play Again
+        </button>
+        <button onClick={onMainMenu} className="pb-btn pb-btn-ghost" style={{ width: '100%' }}>
+          Main Menu
+        </button>
       </div>
     </div>
   )
