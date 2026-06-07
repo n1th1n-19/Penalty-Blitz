@@ -16,7 +16,7 @@ export default function LoginPage() {
       email: form.email, password: form.password, redirect: false,
     })
     if (result?.error) { setError('Invalid email or password'); setLoading(false); return }
-    window.location.href = '/main'
+    window.location.replace('/main')
   }
 
   return (

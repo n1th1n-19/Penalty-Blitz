@@ -31,7 +31,7 @@ export default function RegisterPage() {
       setLoading(false)
       return
     }
-    window.location.href = '/main'
+    window.location.replace('/main')
   }
 
   return (
