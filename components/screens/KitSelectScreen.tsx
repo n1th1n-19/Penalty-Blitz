@@ -7,7 +7,7 @@ import type { NeonKit } from '@/components/ui/PbUi'
 
 export default function KitSelectScreen() {
   const { user, back, updateUser } = useSystemStore()
-  const currentKitId = user?.kit ? (typeof user.kit === 'string' ? user.kit : user.kit.id) : 'lime'
+  const currentKitId = user?.kit ? (typeof user.kit === 'string' ? user.kit : user.kit.id) : 'england'
   const [sel, setSel] = useState(currentKitId)
   const selKit = KITS.find(k => k.id === sel) ?? KITS[0]
 
