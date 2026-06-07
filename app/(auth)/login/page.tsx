@@ -1,11 +1,9 @@
 'use client'
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [form, setForm]       = useState({ email: '', password: '' })
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,7 +16,7 @@ export default function LoginPage() {
       email: form.email, password: form.password, redirect: false,
     })
     if (result?.error) { setError('Invalid email or password'); setLoading(false); return }
-    router.push('/main')
+    window.location.href = '/main'
   }
 
   return (

@@ -1,11 +1,9 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [form, setForm]       = useState({ email: '', username: '', password: '' })
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,7 +31,7 @@ export default function RegisterPage() {
       setLoading(false)
       return
     }
-    router.push('/main')
+    window.location.href = '/main'
   }
 
   return (
