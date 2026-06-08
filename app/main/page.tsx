@@ -11,10 +11,14 @@ export default async function MainPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { avatarKitId: true },
+    select: { avatarKitId: true, playerName: true, playerNumber: true },
   })
 
-  const kit = getKit(user?.avatarKitId ?? DEFAULT_KIT_ID)
+  const kit = {
+    ...getKit(user?.avatarKitId ?? DEFAULT_KIT_ID),
+    ...(user?.playerName   != null && { playerName:   user.playerName }),
+    ...(user?.playerNumber != null && { playerNumber: user.playerNumber }),
+  }
 
   return (
     <AppShell

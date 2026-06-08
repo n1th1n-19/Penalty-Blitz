@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react'
 import { audio } from '@/lib/game/audio'
 import { useSystemStore } from '@/store/systemStore'
 import { signOut } from 'next-auth/react'
-import { PlayerCharacter, XpBar, Icon, StatCard } from '@/components/ui/PbUi'
+import { XpBar, Icon, StatCard } from '@/components/ui/PbUi'
+import { CharacterCanvas } from '@/components/ui/CharacterCanvas'
 import SettingsModal from '@/components/game/SettingsModal'
-import { getKit } from '@/lib/game/kits'
 
 export default function MainScreen() {
   const { user, navigate } = useSystemStore()
@@ -18,7 +18,6 @@ export default function MainScreen() {
 
   if (!user) return null
   const { username, level, xp, kit } = user
-  const neonKit = getKit(typeof kit === 'string' ? kit : kit.id)
 
   const accuracy = Math.round(
     ((user as any).totalGoals ?? 0) /
@@ -45,7 +44,7 @@ export default function MainScreen() {
         {/* Left — character */}
         <div className="hub-left pb-hub-left a-slide">
           <p className="mono-label" style={{ color: 'var(--lime)', letterSpacing: '0.42em' }}>Penalty Blitz</p>
-          <PlayerCharacter kit={neonKit.id} size={210} />
+          <CharacterCanvas kit={kit} size={210} />
           <button
             onClick={() => navigate({ screen: 'kit-select' })}
             className="pb-btn pb-btn-ghost"

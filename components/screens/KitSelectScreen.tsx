@@ -2,22 +2,27 @@
 import { useState } from 'react'
 import { useSystemStore } from '@/store/systemStore'
 import { KITS } from '@/lib/game/kits'
-import { PlayerCharacter, Jersey, Icon } from '@/components/ui/PbUi'
+import { Jersey, Icon } from '@/components/ui/PbUi'
 import type { NeonKit } from '@/components/ui/PbUi'
+import { CharacterCanvas } from '@/components/ui/CharacterCanvas'
 
 export default function KitSelectScreen() {
   const { user, back, updateUser } = useSystemStore()
   const currentKitId = user?.kit ? (typeof user.kit === 'string' ? user.kit : user.kit.id) : 'england'
-  const [sel, setSel] = useState(currentKitId)
+  const [sel, setSel]               = useState(currentKitId)
+  const [playerName, setPlayerName] = useState(user?.kit?.playerName ?? '')
+  const [playerNumber, setPlayerNumber] = useState(user?.kit?.playerNumber ?? 10)
+
   const selKit = KITS.find(k => k.id === sel) ?? KITS[0]
+  const previewKit = { ...selKit, playerName: playerName || undefined, playerNumber }
 
   const confirm = async () => {
     await fetch('/api/avatar-kit', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kitId: sel }),
+      body: JSON.stringify({ kitId: sel, playerName: playerName || undefined, playerNumber }),
     })
-    updateUser({ kit: selKit as any })
+    updateUser({ kit: { ...selKit, playerName: playerName || undefined, playerNumber } })
     back()
   }
 
@@ -41,7 +46,7 @@ export default function KitSelectScreen() {
         <style>{`
           @media(min-width:680px){
             .pb-kit-split{flex-direction:row!important;}
-            .pb-kit-preview{width:clamp(220px,30%,320px)!important;flex-shrink:0;border-right:1px solid var(--bd);border-bottom:none!important;flex-direction:column!important;}
+            .pb-kit-preview{width:clamp(220px,30%,320px)!important;flex-shrink:0;border-right:1px solid var(--bd);border-bottom:none!important;overflow-y:auto;}
           }
         `}</style>
 
@@ -49,21 +54,65 @@ export default function KitSelectScreen() {
         <div
           className="pb-kit-preview a-slide"
           style={{
-            display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-            gap: 18, padding: 'clamp(18px,3vw,32px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 14, padding: 'clamp(14px,3vw,24px)',
             background: 'rgba(0,0,0,0.22)', borderBottom: '1px solid var(--bd)',
           }}
         >
-          <PlayerCharacter kit={selKit as NeonKit} size={150} />
-          <div style={{ textAlign: 'left' }}>
-            <p className="mono-label" style={{ marginBottom: 6 }}>Selected</p>
-            <h3 className="display" style={{ fontSize: 'clamp(22px,5vw,30px)', color: '#fff', marginBottom: 10 }}>{selKit.name}</h3>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <CharacterCanvas kit={previewKit} size={150} />
+
+          <div style={{ width: '100%', textAlign: 'center' }}>
+            <p className="mono-label" style={{ marginBottom: 4 }}>Selected</p>
+            <h3 className="display" style={{ fontSize: 'clamp(18px,4vw,24px)', color: '#fff', marginBottom: 8 }}>{selKit.name}</h3>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               {[selKit.primary, selKit.secondary, selKit.trim].map((c, i) => (
-                <div key={i} style={{ width: 22, height: 22, borderRadius: 6, background: c, border: '1px solid rgba(255,255,255,0.2)' }} />
+                <div key={i} style={{ width: 20, height: 20, borderRadius: 5, background: c, border: '1px solid rgba(255,255,255,0.2)' }} />
               ))}
             </div>
           </div>
+
+          {/* Jersey name + number */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div>
+              <p className="mono-label" style={{ marginBottom: 4 }}>Player Name</p>
+              <input
+                value={playerName}
+                onChange={e => setPlayerName(e.target.value.toUpperCase().slice(0, 10))}
+                placeholder="YOUR NAME"
+                maxLength={10}
+                className="pb-input"
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid var(--bd)',
+                  borderRadius: 8, padding: '8px 12px', color: '#fff',
+                  fontFamily: 'var(--font-mono)', fontSize: 13, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', outline: 'none',
+                }}
+              />
+            </div>
+            <div>
+              <p className="mono-label" style={{ marginBottom: 4 }}>Squad No.</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={playerNumber}
+                onChange={e => {
+                  const n = parseInt(e.target.value)
+                  if (!isNaN(n) && n >= 1 && n <= 99) setPlayerNumber(n)
+                }}
+                className="pb-input"
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid var(--bd)',
+                  borderRadius: 8, padding: '8px 12px', color: '#fff',
+                  fontFamily: 'var(--font-mono)', fontSize: 13, letterSpacing: '0.08em',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+
         </div>
 
         {/* Grid + footer */}
