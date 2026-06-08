@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         metric === 'goals'    ? goals      :
         metric === 'bestgame' ? bestGame   :
         metric === 'streak'   ? bestStreak :
-        metric === 'winrate'  ? (u.scores.length >= 10 ? winRate : -1) :
+        metric === 'winrate'  ? winRate :
         xpTotal
 
       return {
