@@ -32,9 +32,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
       playerNumber: true,
       playerName: true,
       createdAt: true,
-      scores: {
-        select: { goalsScored: true, totalShots: true },
-      },
     },
   })
 
@@ -42,33 +39,38 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const allScores = user.scores
+  const [stats, recentScores, recentShots] = await Promise.all([
+    prisma.score.aggregate({
+      where: { userId: user.id },
+      _sum: { goalsScored: true, totalShots: true },
+      _max: { goalsScored: true },
+      _count: true,
+    }),
+    prisma.score.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        goalsScored: true,
+        totalShots: true,
+        difficulty: true,
+        xpEarned: true,
+        createdAt: true,
+      },
+    }),
+    prisma.shot.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: { x: true, y: true, scored: true },
+    }),
+  ])
 
-  const recentScores = await prisma.score.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-    take: 10,
-    select: {
-      goalsScored: true,
-      totalShots: true,
-      difficulty: true,
-      xpEarned: true,
-      createdAt: true,
-    },
-  })
-
-  const recentShots = await prisma.shot.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-    take: 200,
-    select: { x: true, y: true, scored: true },
-  })
-
-  const totalGoals = allScores.reduce((sum, s) => sum + s.goalsScored, 0)
-  const totalShots = allScores.reduce((sum, s) => sum + s.totalShots, 0)
-  const bestGame = allScores.length > 0 ? Math.max(...allScores.map(s => s.goalsScored)) : 0
+  const totalGoals = stats._sum.goalsScored ?? 0
+  const totalShots = stats._sum.totalShots ?? 0
+  const bestGame   = stats._max.goalsScored ?? 0
+  const gamesPlayed = stats._count
   const winRate = totalShots > 0 ? Math.round((totalGoals / totalShots) * 100) : 0
-  const gamesPlayed = allScores.length
 
   const counts: Record<Zone, number> = {
     'left-top': 0,
