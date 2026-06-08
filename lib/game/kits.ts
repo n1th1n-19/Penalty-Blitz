@@ -9,6 +9,8 @@ export const KITS: Kit[] = [
   { id: 'costa-rica',   name: 'Costa Rica',   primary: '#002B7F', secondary: '#FFFFFF', trim: '#CE1126', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'jamaica',      name: 'Jamaica',      primary: '#000000', secondary: '#FFD100', trim: '#009B3A', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'honduras',     name: 'Honduras',     primary: '#0073CF', secondary: '#FFFFFF', trim: '#0073CF', pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'haiti',        name: 'Haiti',        primary: '#00209F', secondary: '#D21034', trim: '#FFFFFF',  pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'curacao',      name: 'Curaçao',      primary: '#002B7F', secondary: '#FFFFFF', trim: '#F9E90D',  pattern: 'solid', unlocked: true, type: 'country' },
   // CONMEBOL
   { id: 'argentina',    name: 'Argentina',    primary: '#74ACDF', secondary: '#FFFFFF', trim: '#F6B40E', pattern: 'hoops', unlocked: true, type: 'country' },
   { id: 'brazil',       name: 'Brazil',       primary: '#009C3B', secondary: '#FFDF00', trim: '#002776', pattern: 'solid', unlocked: true, type: 'country' },
@@ -36,7 +38,12 @@ export const KITS: Kit[] = [
   { id: 'serbia',       name: 'Serbia',       primary: '#C6363C', secondary: '#0C4076', trim: '#FFFFFF', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'poland',       name: 'Poland',       primary: '#FFFFFF', secondary: '#DC143C', trim: '#DC143C', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'scotland',     name: 'Scotland',     primary: '#003073', secondary: '#FFFFFF', trim: '#FF9900', pattern: 'solid', unlocked: true, type: 'country' },
-  { id: 'romania',      name: 'Romania',      primary: '#002B7F', secondary: '#FCD116', trim: '#CE1126', pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'romania',      name: 'Romania',      primary: '#002B7F', secondary: '#FCD116', trim: '#CE1126', pattern: 'solid',   unlocked: true, type: 'country' },
+  { id: 'norway',       name: 'Norway',       primary: '#EF3340', secondary: '#FFFFFF', trim: '#002868',  pattern: 'solid',   unlocked: true, type: 'country' },
+  { id: 'sweden',       name: 'Sweden',       primary: '#FECC02', secondary: '#006AA7', trim: '#006AA7',  pattern: 'solid',   unlocked: true, type: 'country' },
+  { id: 'bosnia',       name: 'Bosnia',       primary: '#002395', secondary: '#FFD700', trim: '#FFFFFF',  pattern: 'stripes', unlocked: true, type: 'country' },
+  { id: 'turkey',       name: 'Turkey',       primary: '#E30A17', secondary: '#FFFFFF', trim: '#E30A17',  pattern: 'solid',   unlocked: true, type: 'country' },
+  { id: 'czechia',      name: 'Czechia',      primary: '#D7141A', secondary: '#11457E', trim: '#FFFFFF',  pattern: 'solid',   unlocked: true, type: 'country' },
   // CAF
   { id: 'morocco',      name: 'Morocco',      primary: '#C1272D', secondary: '#006233', trim: '#FFFFFF', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'nigeria',      name: 'Nigeria',      primary: '#008751', secondary: '#FFFFFF', trim: '#008751', pattern: 'solid', unlocked: true, type: 'country' },
@@ -47,6 +54,9 @@ export const KITS: Kit[] = [
   { id: 'algeria',      name: 'Algeria',      primary: '#FFFFFF', secondary: '#006233', trim: '#D21034', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'ivory-coast',  name: 'Ivory Coast',  primary: '#F77F00', secondary: '#009A44', trim: '#FFFFFF', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'ghana',        name: 'Ghana',        primary: '#006B3F', secondary: '#FCD116', trim: '#CE1126', pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'tunisia',      name: 'Tunisia',      primary: '#FFFFFF', secondary: '#E70013', trim: '#E70013',  pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'cape-verde',   name: 'Cape Verde',   primary: '#003893', secondary: '#CF2027', trim: '#F7D116',  pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'dr-congo',     name: 'DR Congo',     primary: '#007FFF', secondary: '#CE1021', trim: '#F7D116',  pattern: 'solid', unlocked: true, type: 'country' },
   // AFC
   { id: 'japan',        name: 'Japan',        primary: '#000080', secondary: '#FFFFFF', trim: '#BC002D', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'south-korea',  name: 'South Korea',  primary: '#C60C30', secondary: '#003478', trim: '#FFFFFF', pattern: 'solid', unlocked: true, type: 'country' },
@@ -56,6 +66,7 @@ export const KITS: Kit[] = [
   { id: 'qatar',        name: 'Qatar',        primary: '#8D1B3D', secondary: '#FFFFFF', trim: '#8D1B3D', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'iraq',         name: 'Iraq',         primary: '#007A3D', secondary: '#FFFFFF', trim: '#CE1126', pattern: 'solid', unlocked: true, type: 'country' },
   { id: 'uzbekistan',   name: 'Uzbekistan',   primary: '#1EB4F0', secondary: '#FFFFFF', trim: '#1EBF8A', pattern: 'solid', unlocked: true, type: 'country' },
+  { id: 'jordan',       name: 'Jordan',       primary: '#FFFFFF', secondary: '#007A3D', trim: '#CE1126',  pattern: 'solid', unlocked: true, type: 'country' },
   // OFC
   { id: 'new-zealand',  name: 'New Zealand',  primary: '#FFFFFF', secondary: '#000000', trim: '#CC0000', pattern: 'solid', unlocked: true, type: 'country' },
 ]

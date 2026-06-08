@@ -170,6 +170,11 @@ function lighten(color: string, amount: number): string {
   return `rgb(${Math.min(255, r + amount)},${Math.min(255, g + amount)},${Math.min(255, b + amount)})`
 }
 
+function contrastColor(bg: string): string {
+  const [r, g, b] = hex(bg)
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#111111' : '#ffffff'
+}
+
 // Draw a 3D-looking block (Roblox style)
 function drawBlock(
   ctx: CanvasRenderingContext2D,
@@ -297,13 +302,13 @@ function drawTorso(
     ctx.fillRect(cx - w * 0.2, y, w * 0.4, h * 0.12)
 
     // Number
-    ctx.fillStyle = kit.numberColor ?? '#fff'
+    ctx.fillStyle = kit.numberColor ?? contrastColor(kit.primary)
     ctx.font = `bold ${h * 0.32}px monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(kit.playerNumber !== undefined ? String(kit.playerNumber) : '10', cx, cy + h * 0.1)
   } else {
-    ctx.fillStyle = kit.numberColor ?? '#fff'
+    ctx.fillStyle = kit.numberColor ?? contrastColor(kit.primary)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     if (kit.playerName) {

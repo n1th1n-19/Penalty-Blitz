@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useSystemStore } from '@/store/systemStore'
 import { Icon, Jersey } from '@/components/ui/PbUi'
-import { getKit } from '@/lib/game/kits'
+import { getKit, DEFAULT_KIT_ID } from '@/lib/game/kits'
 import type { NeonKit } from '@/components/ui/PbUi'
 import XpBar from '@/components/profile/XpBar'
 import ShotHeatmap from '@/components/profile/ShotHeatmap'
@@ -12,6 +12,8 @@ interface ProfileData {
   level: number
   xp: number
   avatarKitId: string | null
+  playerNumber: number
+  playerName: string | null
   totalGoals: number
   totalShots: number
   bestGame: number
@@ -41,7 +43,7 @@ export default function ProfileScreen({ username }: { username: string }) {
       .catch(() => setError(true))
   }, [username])
 
-  const kit = getKit(data?.avatarKitId ?? 'lime')
+  const kit = getKit(data?.avatarKitId ?? DEFAULT_KIT_ID)
 
   return (
     <div className="pb-stadium" style={{ minHeight: '100dvh', overflowY: 'auto' }}>
@@ -68,7 +70,7 @@ export default function ProfileScreen({ username }: { username: string }) {
             {/* Hero card */}
             <div className="pb-card a-slide" style={{ padding: '24px 22px', display: 'flex', alignItems: 'center', gap: 20 }}>
               <div style={{ flexShrink: 0 }}>
-                <Jersey kit={kit as NeonKit} size={80} glow={false} num={9} />
+                <Jersey kit={kit as NeonKit} size={80} glow={false} num={data.playerNumber} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>

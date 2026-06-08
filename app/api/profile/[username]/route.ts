@@ -29,6 +29,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       level: true,
       xp: true,
       avatarKitId: true,
+      playerNumber: true,
+      playerName: true,
       createdAt: true,
       scores: {
         select: { goalsScored: true, totalShots: true },
@@ -92,6 +94,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     level: user.level,
     xp: user.xp,
     avatarKitId: user.avatarKitId ?? null,
+    playerNumber: user.playerNumber ?? 10,
+    playerName: user.playerName ?? null,
     totalGoals,
     totalShots,
     bestGame,
