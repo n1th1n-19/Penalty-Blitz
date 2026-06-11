@@ -16,6 +16,9 @@ export interface UserCache {
   level: number
   xp: number
   kit: Kit
+  totalGoals?: number
+  totalShots?: number
+  bestStreak?: number
 }
 
 interface SystemState {
