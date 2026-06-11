@@ -30,22 +30,25 @@ export default async function LandingPage() {
       {/* Rolling ball */}
       <div className="landing-ball" />
 
-      {/* Title */}
-      <div className="landing-title-wrap a-slide">
-        <span className="title-solid">PENALTY</span>
-        <span className="title-outline">BLITZ</span>
-        <div className="title-rule" />
-        <p className="menu-tagline">One keeper &nbsp;·&nbsp; one spot &nbsp;·&nbsp; no mercy</p>
-      </div>
+      {/* Landscape wrapper — becomes row on landscape mobile */}
+      <div className="landing-ls-wrap" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 900, position: 'relative', zIndex: 1 }}>
+        {/* Title */}
+        <div className="landing-title-wrap a-slide">
+          <span className="title-solid">PENALTY</span>
+          <span className="title-outline">BLITZ</span>
+          <div className="title-rule" />
+          <p className="menu-tagline">One keeper &nbsp;·&nbsp; one spot &nbsp;·&nbsp; no mercy</p>
+        </div>
 
-      {/* Action card */}
-      <div className="landing-card a-slide-2">
-        <Link href="/login" className="pb-btn pb-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-          Sign In
-        </Link>
-        <Link href="/register" className="pb-btn pb-btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>
-          Create Account
-        </Link>
+        {/* Action card */}
+        <div className="landing-card a-slide-2">
+          <Link href="/login" className="pb-btn pb-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+            Sign In
+          </Link>
+          <Link href="/register" className="pb-btn pb-btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>
+            Create Account
+          </Link>
+        </div>
       </div>
 
       <p className="menu-copyright">Penalty Blitz &copy; {new Date().getFullYear()}</p>

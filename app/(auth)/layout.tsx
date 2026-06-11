@@ -46,8 +46,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* Right — form panel */}
       <div className="auth-form-panel pb-stadium">
-        {/* Mobile brand header */}
-        <div style={{ marginBottom: 28, textAlign: 'center' }} className="a-slide">
+        {/* Mobile brand header — hidden when desktop 2-col panel is visible */}
+        <div style={{ marginBottom: 28, textAlign: 'center' }} className="a-slide auth-mobile-brand">
           <Link href="/" style={{ textDecoration: 'none' }}>
             <span className="display" style={{ fontSize: 28, color: '#fff', letterSpacing: '0.06em' }}>
               PENALTY BLITZ

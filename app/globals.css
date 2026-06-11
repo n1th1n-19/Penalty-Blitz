@@ -663,6 +663,31 @@ button { font-family: inherit; }
   .stat-card-value { font-size: clamp(18px, 4vw, 26px); }
 }
 
+/* ── Auth: hide duplicate mobile title when desktop 2-col shows ── */
+@media (min-width: 780px) {
+  .auth-mobile-brand { display: none !important; }
+  .auth-form-panel { min-height: unset; height: 100dvh; }
+}
+
+/* ── Landing: row layout on landscape mobile ── */
+@media (orientation: landscape) and (max-height: 620px) {
+  .landing-ls-wrap {
+    flex-direction: row !important;
+    align-items: center;
+    gap: clamp(24px, 6vw, 60px);
+  }
+  .landing-title-wrap { margin-bottom: 0 !important; text-align: left; }
+  .title-solid, .title-outline { font-size: clamp(36px, 8vw, 80px) !important; }
+  .landing-card { max-width: 300px !important; }
+}
+
+/* ── Result screen: landscape 2-col cards + row buttons ── */
+@media (orientation: landscape) and (max-height: 620px) {
+  .result-cards-wrap { flex-direction: row !important; align-items: stretch; gap: 12px; }
+  .result-card { margin-bottom: 0 !important; flex: 1; }
+  .result-actions { flex-direction: row !important; }
+}
+
 /* Mobile HUD (legacy, kept for compat) */
 .mobile-hud-pill {
   font-family: var(--font-mono); font-size: 12px; font-weight: 700;

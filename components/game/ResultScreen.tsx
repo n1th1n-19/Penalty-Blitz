@@ -60,12 +60,14 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
       overflowY: 'auto',
     }}>
 
+      {/* ── Cards wrap — row in landscape ── */}
+      <div className="result-cards-wrap" style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: 960, gap: 'clamp(8px,1.5vh,14px)' }}>
+
       {/* ── Scoreboard card ──────────────────────────────────── */}
-      <div className="card slide-up" style={{
+      <div className="card slide-up result-card" style={{
         width: '100%',
         maxWidth: 480,
         overflow: 'hidden',
-        marginBottom: 'clamp(8px,1.5vh,14px)',
       }}>
         {/* Green header band */}
         <div style={{
@@ -90,7 +92,7 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
           {visible && (
             <div className="pop-in" style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(32px,9vw,54px)',
+              fontSize: 'clamp(36px,10vw,64px)',
               color: ratingColor,
               letterSpacing: '0.04em',
               lineHeight: 1,
@@ -117,13 +119,13 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
           }}>
             <div style={{ flex: 1, padding: 'clamp(8px,1.5vh,14px) 16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
               <p className="label-mono" style={{ marginBottom: 4 }}>STREAK</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,6vh,48px)', color: ratingColor, lineHeight: 1 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,6vh,48px)', color: ratingColor, lineHeight: 1, textShadow: `0 0 40px ${ratingColor}88` }}>
                 {playerScore}
               </p>
             </div>
             <div style={{ flex: 1, padding: 'clamp(8px,1.5vh,14px) 16px', textAlign: 'center' }}>
               <p className="label-mono" style={{ marginBottom: 4 }}>SHOTS</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,6vh,48px)', color: 'var(--text-muted)', lineHeight: 1 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,6vh,48px)', color: 'var(--text-muted)', lineHeight: 1, textShadow: '0 0 20px rgba(191,196,201,0.3)' }}>
                 {totalShots}
               </p>
             </div>
@@ -149,11 +151,10 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
 
       {/* ── XP panel ─────────────────────────────────────────── */}
       {xpResult && (
-        <div className="card slide-up-d1" style={{
+        <div className="card slide-up-d1 result-card" style={{
           width: '100%',
           maxWidth: 480,
           padding: 'clamp(10px,2vh,18px) 20px',
-          marginBottom: 'clamp(8px,1.5vh,14px)',
           borderLeft: playerScore >= 10 ? '3px solid var(--gold)' : '3px solid var(--green-accent)',
         }}>
           <p className="label-mono" style={{ color: 'var(--green-accent)', marginBottom: 14 }}>XP EARNED</p>
@@ -210,10 +211,12 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
         </div>
       )}
 
-      {/* ── Actions ───────────────────────────────────────────── */}
-      <div className="slide-up-d2" style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <button onClick={onRestart} className="btn-primary">Play Again</button>
-        <button onClick={onMainMenu} className="btn-ghost">Main Menu</button>
+      </div>{/* end result-cards-wrap */}
+
+      {/* ── Actions — always row ────────────────────────────────── */}
+      <div className="result-actions slide-up-d2" style={{ width: '100%', maxWidth: 960, display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'clamp(8px,1.5vh,14px)' }}>
+        <button onClick={onRestart} className="btn-primary" style={{ flex: 1 }}>Play Again</button>
+        <button onClick={onMainMenu} className="btn-ghost" style={{ flex: 1 }}>Main Menu</button>
       </div>
     </div>
   )

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { audio } from '@/lib/game/audio'
 import { useSystemStore } from '@/store/systemStore'
 import { signOut } from 'next-auth/react'
-import { XpBar, Icon, StatCard } from '@/components/ui/PbUi'
+import { XpBar, Icon } from '@/components/ui/PbUi'
 import { CharacterCanvas } from '@/components/ui/CharacterCanvas'
 import SettingsModal from '@/components/game/SettingsModal'
 
@@ -44,20 +44,31 @@ export default function MainScreen() {
         `}</style>
 
         {/* Left — character */}
-        <div className="hub-left pb-hub-left a-slide">
-          <p className="mono-label" style={{ color: 'var(--lime)', letterSpacing: '0.42em' }}>Penalty Blitz</p>
-          <CharacterCanvas kit={kit} size={charSize} />
+        <div className="hub-left pb-hub-left a-slide" style={{ position: 'relative' }}>
+          {/* Neon glow orb behind character */}
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 220, height: 220, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(200,255,0,0.10) 0%, rgba(0,217,199,0.06) 45%, transparent 72%)',
+            pointerEvents: 'none', zIndex: 0,
+            animation: 'pb-halo 4s ease-in-out infinite',
+          }} />
+          <p className="mono-label" style={{ color: 'var(--lime)', letterSpacing: '0.42em', position: 'relative', zIndex: 1 }}>Penalty Blitz</p>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <CharacterCanvas kit={kit} size={charSize} />
+          </div>
           <button
             onClick={() => navigate({ screen: 'kit-select' })}
             className="pb-btn pb-btn-ghost"
-            style={{ maxWidth: 210, fontSize: 10 }}
+            style={{ maxWidth: 210, fontSize: 10, position: 'relative', zIndex: 1 }}
           >
             <Icon name="shirt" size={14} /> Change Kit
           </button>
         </div>
 
         {/* Right — nav */}
-        <div className="hub-right pb-hub-right" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="hub-right pb-hub-right" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px,1.5vh,14px)' }}>
           {/* User card */}
           <div className="pb-card a-slide" style={{ padding: '20px 22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -101,11 +112,18 @@ export default function MainScreen() {
             </div>
           </button>
 
-          {/* Quick stats */}
-          <div className="a-slide-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-            <StatCard value={(user as any).bestStreak ?? 0} label="Best Streak" color="var(--lime)" />
-            <StatCard value={(user as any).totalGoals ?? 0} label="Goals" color="var(--cyan)" />
-            <StatCard value={accuracy + '%'} label="Accuracy" color="var(--gold)" />
+          {/* Quick stats — inline pill row for landscape */}
+          <div className="a-slide-2 pb-card" style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '10px 16px' }}>
+            {[
+              { value: user.bestStreak ?? 0, label: 'Streak', color: 'var(--lime)' },
+              { value: user.totalGoals ?? 0, label: 'Goals', color: 'var(--cyan)' },
+              { value: accuracy + '%', label: 'Accuracy', color: 'var(--gold)' },
+            ].map((s, i) => (
+              <div key={s.label} style={{ flex: 1, textAlign: 'center', borderLeft: i > 0 ? '1px solid var(--bd)' : 'none', padding: '2px 0' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(18px,3vw,26px)', color: s.color, lineHeight: 1, textShadow: `0 0 16px ${s.color}55` }}>{s.value}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--txt-3)', marginTop: 3 }}>{s.label}</div>
+              </div>
+            ))}
           </div>
 
           {/* Nav grid */}
@@ -139,7 +157,7 @@ export default function MainScreen() {
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
             className="pb-btn pb-btn-ghost a-slide-4"
-            style={{ width: '100%', borderColor: 'transparent', color: 'var(--txt-3)', fontSize: 10, marginTop: 2 }}
+            style={{ width: '100%', borderColor: 'transparent', color: 'var(--txt-3)', fontSize: 10, marginTop: 'auto' }}
           >
             <Icon name="signout" size={14} /> Sign Out
           </button>

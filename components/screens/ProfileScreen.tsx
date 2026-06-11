@@ -49,9 +49,15 @@ export default function ProfileScreen({ username }: { username: string }) {
     <div className="pb-stadium" style={{ height: '100dvh', overflowY: 'auto' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: 'clamp(20px,4vw,40px) 20px 60px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-        <button onClick={back} className="pb-btn pb-btn-ghost" style={{ padding: '10px 16px', alignSelf: 'flex-start' }}>
-          <Icon name="back" size={14} /> Back
-        </button>
+        <div className="a-slide" style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+          <button onClick={back} className="pb-btn pb-btn-ghost" style={{ padding: '10px 16px', flexShrink: 0 }}>
+            <Icon name="back" size={14} /> Back
+          </button>
+          <div>
+            <p className="mono-label" style={{ color: 'var(--lime)', letterSpacing: '0.4em', marginBottom: 4 }}>Player Stats</p>
+            <h1 className="display" style={{ fontSize: 'clamp(24px,5vw,44px)', color: '#fff', lineHeight: 0.95 }}>PROFILE</h1>
+          </div>
+        </div>
 
         {error && (
           <div className="pb-card a-slide" style={{ padding: '24px 22px' }}>
@@ -68,7 +74,7 @@ export default function ProfileScreen({ username }: { username: string }) {
         {data && (
           <>
             {/* Hero card */}
-            <div className="pb-card a-slide" style={{ padding: '24px 22px', display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div className="pb-card a-slide" style={{ padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 20, borderLeft: '3px solid var(--lime)' }}>
               <div style={{ flexShrink: 0 }}>
                 <Jersey kit={kit as NeonKit} size={80} glow={false} num={data.playerNumber} />
               </div>
@@ -94,17 +100,17 @@ export default function ProfileScreen({ username }: { username: string }) {
                 { label: 'Games Played', value: data.gamesPlayed,   color: 'var(--gold)' },
                 { label: 'Win Rate',     value: `${data.winRate}%`, color: 'var(--txt-2)' },
               ].map(({ label, value, color }) => (
-                <div key={label} className="stat-card" style={{ borderLeft: `2px solid ${color}22` }}>
-                  <div className="stat-card-value" style={{ color }}>{value}</div>
+                <div key={label} className="stat-card" style={{ borderLeft: `2px solid ${color}44`, minHeight: 68 }}>
+                  <div className="stat-card-value" style={{ color, textShadow: `0 0 20px ${color}44` }}>{value}</div>
                   <div className="stat-card-label">{label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Bottom two-col on desktop */}
+            {/* Bottom two-col */}
             <div
               className="a-slide-2"
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}
             >
               {/* Shot heatmap */}
               <div className="pb-card" style={{ padding: '20px 22px' }}>

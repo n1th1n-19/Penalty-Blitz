@@ -121,7 +121,7 @@ export default function KitSelectScreen() {
         {/* Grid + footer */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: 'clamp(16px,3vw,24px)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px,1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px,1fr))', gap: 10 }}>
               {KITS.map((k, i) => {
                 const active = sel === k.id
                 const locked = !k.unlocked
@@ -142,7 +142,7 @@ export default function KitSelectScreen() {
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                       opacity: locked ? 0.5 : 1,
                       transition: 'border-color .15s, background .15s',
-                      boxShadow: active ? '0 0 22px rgba(200,255,0,0.12)' : 'none',
+                      boxShadow: active ? '0 0 28px rgba(200,255,0,0.22)' : 'none',
                     }}
                   >
                     <Jersey kit={k as NeonKit} size={72} glow={false} />
