@@ -48,14 +48,14 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
 
   return (
     <div style={{
-      minHeight: '100dvh',
+      height: '100dvh',
       background: 'var(--bg-base)',
       backgroundImage: 'var(--stadium-bg)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 'clamp(20px,4vw,40px) 20px max(32px, calc(env(safe-area-inset-bottom) + 24px))',
+      padding: 'clamp(10px,2vw,40px) 20px max(16px, calc(env(safe-area-inset-bottom) + 12px))',
       gap: 0,
       overflowY: 'auto',
     }}>
@@ -65,7 +65,7 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
         width: '100%',
         maxWidth: 480,
         overflow: 'hidden',
-        marginBottom: 14,
+        marginBottom: 'clamp(8px,1.5vh,14px)',
       }}>
         {/* Green header band */}
         <div style={{
@@ -85,7 +85,7 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
           </span>
         </div>
 
-        <div style={{ padding: '24px 20px 20px' }}>
+        <div style={{ padding: 'clamp(12px,2vh,24px) 20px clamp(10px,2vh,20px)' }}>
           {/* Rating */}
           {visible && (
             <div className="pop-in" style={{
@@ -94,13 +94,13 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
               color: ratingColor,
               letterSpacing: '0.04em',
               lineHeight: 1,
-              marginBottom: 8,
+              marginBottom: 'clamp(4px,1vh,8px)',
               textShadow: `0 0 32px ${ratingColor}44`,
             }}>
               {rating}
             </div>
           )}
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 20 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 'clamp(10px,2vh,20px)' }}>
             {comment}
           </p>
 
@@ -109,21 +109,21 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
             display: 'flex',
             alignItems: 'center',
             gap: 0,
-            marginBottom: 20,
+            marginBottom: 'clamp(10px,2vh,20px)',
             background: 'rgba(0,0,0,0.25)',
             borderRadius: 10,
             overflow: 'hidden',
             border: '1px solid var(--border)',
           }}>
-            <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
+            <div style={{ flex: 1, padding: 'clamp(8px,1.5vh,14px) 16px', textAlign: 'center', borderRight: '1px solid var(--border)' }}>
               <p className="label-mono" style={{ marginBottom: 4 }}>STREAK</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: ratingColor, lineHeight: 1 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,6vh,48px)', color: ratingColor, lineHeight: 1 }}>
                 {playerScore}
               </p>
             </div>
-            <div style={{ flex: 1, padding: '14px 16px', textAlign: 'center' }}>
+            <div style={{ flex: 1, padding: 'clamp(8px,1.5vh,14px) 16px', textAlign: 'center' }}>
               <p className="label-mono" style={{ marginBottom: 4 }}>SHOTS</p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 48, color: 'var(--text-muted)', lineHeight: 1 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px,6vh,48px)', color: 'var(--text-muted)', lineHeight: 1 }}>
                 {totalShots}
               </p>
             </div>
@@ -152,8 +152,8 @@ export default function ResultScreen({ playerScore, cpuScore: totalShots, player
         <div className="card slide-up-d1" style={{
           width: '100%',
           maxWidth: 480,
-          padding: '18px 20px',
-          marginBottom: 14,
+          padding: 'clamp(10px,2vh,18px) 20px',
+          marginBottom: 'clamp(8px,1.5vh,14px)',
           borderLeft: playerScore >= 10 ? '3px solid var(--gold)' : '3px solid var(--green-accent)',
         }}>
           <p className="label-mono" style={{ color: 'var(--green-accent)', marginBottom: 14 }}>XP EARNED</p>
