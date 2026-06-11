@@ -19,6 +19,8 @@ export default function MainScreen() {
   if (!user) return null
   const { username, level, xp, kit } = user
 
+  const charSize = typeof window !== 'undefined' && window.innerHeight < 500 ? 150 : 210
+
   const accuracy = Math.round(
     ((user as any).totalGoals ?? 0) /
     Math.max(1, (user as any).totalShots ?? 1) * 100
@@ -44,7 +46,7 @@ export default function MainScreen() {
         {/* Left — character */}
         <div className="hub-left pb-hub-left a-slide">
           <p className="mono-label" style={{ color: 'var(--lime)', letterSpacing: '0.42em' }}>Penalty Blitz</p>
-          <CharacterCanvas kit={kit} size={210} />
+          <CharacterCanvas kit={kit} size={charSize} />
           <button
             onClick={() => navigate({ screen: 'kit-select' })}
             className="pb-btn pb-btn-ghost"

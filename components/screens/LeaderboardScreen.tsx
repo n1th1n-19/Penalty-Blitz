@@ -7,7 +7,7 @@ export default function LeaderboardScreen() {
   const { user, back } = useSystemStore()
 
   return (
-    <div className="pb-stadium" style={{ minHeight: '100dvh', overflowY: 'auto' }}>
+    <div className="pb-stadium" style={{ height: '100dvh', overflowY: 'auto' }}>
       <div style={{ maxWidth: 700, margin: '0 auto', padding: 'clamp(20px,4vw,48px) 20px 60px' }}>
 
         <button

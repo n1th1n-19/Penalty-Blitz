@@ -46,7 +46,7 @@ export default function ProfileScreen({ username }: { username: string }) {
   const kit = getKit(data?.avatarKitId ?? DEFAULT_KIT_ID)
 
   return (
-    <div className="pb-stadium" style={{ minHeight: '100dvh', overflowY: 'auto' }}>
+    <div className="pb-stadium" style={{ height: '100dvh', overflowY: 'auto' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: 'clamp(20px,4vw,40px) 20px 60px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         <button onClick={back} className="pb-btn pb-btn-ghost" style={{ padding: '10px 16px', alignSelf: 'flex-start' }}>

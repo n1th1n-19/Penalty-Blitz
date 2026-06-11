@@ -16,6 +16,8 @@ export default function KitSelectScreen() {
   const selKit = KITS.find(k => k.id === sel) ?? KITS[0]
   const previewKit = { ...selKit, playerName: playerName || undefined, playerNumber }
 
+  const charSize = typeof window !== 'undefined' && window.innerHeight < 500 ? 110 : 150
+
   const confirm = async () => {
     await fetch('/api/avatar-kit', {
       method: 'PATCH',
@@ -57,9 +59,10 @@ export default function KitSelectScreen() {
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             gap: 14, padding: 'clamp(14px,3vw,24px)',
             background: 'rgba(0,0,0,0.22)', borderBottom: '1px solid var(--bd)',
+            overflowY: 'auto',
           }}
         >
-          <CharacterCanvas kit={previewKit} size={150} />
+          <CharacterCanvas kit={previewKit} size={charSize} />
 
           <div style={{ width: '100%', textAlign: 'center' }}>
             <p className="mono-label" style={{ marginBottom: 4 }}>Selected</p>
