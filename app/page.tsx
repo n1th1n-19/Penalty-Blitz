@@ -1,7 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions)
@@ -42,12 +41,9 @@ export default async function LandingPage() {
 
         {/* Action card */}
         <div className="landing-card a-slide-2">
-          <Link href="/login" className="pb-btn pb-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-            Sign In
-          </Link>
-          <Link href="/register" className="pb-btn pb-btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>
-            Create Account
-          </Link>
+          <a href="/api/auth/mewe/redirect" className="pb-btn pb-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+            Sign In with MeWe
+          </a>
         </div>
       </div>
 
