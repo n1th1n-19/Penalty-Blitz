@@ -4,12 +4,30 @@ import { timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
+const prod = process.env.NODE_ENV === 'production'
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/',
   },
+  // SameSite=None required so cookies are sent when the app runs inside the
+  // MeWe iframe (cross-site context). Falls back to Lax on http localhost.
+  cookies: prod ? {
+    csrfToken: {
+      name: '__Host-next-auth.csrf-token',
+      options: { httpOnly: true, sameSite: 'none', path: '/', secure: true },
+    },
+    callbackUrl: {
+      name: '__Secure-next-auth.callback-url',
+      options: { sameSite: 'none', path: '/', secure: true },
+    },
+    sessionToken: {
+      name: '__Secure-next-auth.session-token',
+      options: { httpOnly: true, sameSite: 'none', path: '/', secure: true },
+    },
+  } : undefined,
   providers: [
     CredentialsProvider({
       name: 'mewe',
@@ -48,10 +66,8 @@ export const authOptions: NextAuthOptions = {
           `https://mewe.com/api/dev/token?loginRequestToken=${credentials.loginRequestToken}`,
           { method: 'GET', headers: { 'X-App-Id': appId, 'X-Api-Key': apiKey } }
         )
-        const tokenBody = await tokenRes.text()
-        console.log('[mewe] token exchange status:', tokenRes.status, tokenBody)
         if (!tokenRes.ok) return null
-        const { apiToken } = JSON.parse(tokenBody)
+        const { apiToken } = await tokenRes.json()
 
         const profileRes = await fetch('https://mewe.com/api/dev/me', {
           headers: {
@@ -59,10 +75,8 @@ export const authOptions: NextAuthOptions = {
             'X-App-Id': appId,
           },
         })
-        const profileBody = await profileRes.text()
-        console.log('[mewe] profile status:', profileRes.status, profileBody)
         if (!profileRes.ok) return null
-        const profile = JSON.parse(profileBody)
+        const profile = await profileRes.json()
 
         const user = await prisma.user.upsert({
           where:  { meweId: profile.userId },
