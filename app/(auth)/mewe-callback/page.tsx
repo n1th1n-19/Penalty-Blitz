@@ -1,9 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 
-export default function MeWeCallbackPage() {
+function MeWeCallback() {
   const searchParams = useSearchParams()
   const [error, setError] = useState('')
 
@@ -38,8 +38,8 @@ export default function MeWeCallbackPage() {
       {error ? (
         <>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--danger)' }}>{error}</p>
-          <a href="/login" className="pb-btn pb-btn-primary" style={{ textAlign: 'center' }}>
-            Back to Login →
+          <a href="/" className="pb-btn pb-btn-primary" style={{ textAlign: 'center' }}>
+            Back to Home →
           </a>
         </>
       ) : (
@@ -48,5 +48,13 @@ export default function MeWeCallbackPage() {
         </p>
       )}
     </div>
+  )
+}
+
+export default function MeWeCallbackPage() {
+  return (
+    <Suspense>
+      <MeWeCallback />
+    </Suspense>
   )
 }
