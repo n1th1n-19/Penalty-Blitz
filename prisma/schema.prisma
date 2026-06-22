@@ -10,8 +10,9 @@ datasource db {
 
 model User {
   id              String   @id @default(uuid())
-  email           String   @unique
-  passwordHash    String   @map("password_hash")
+  meweId          String?  @unique @map("mewe_id")
+  email           String?  @unique
+  passwordHash    String?  @map("password_hash")
   username        String   @unique
   xp              Int      @default(0)
   level           Int      @default(1)
