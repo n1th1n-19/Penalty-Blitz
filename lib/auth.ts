@@ -18,24 +18,35 @@ export const authOptions: NextAuthOptions = {
         state:             { type: 'text' },
       },
       async authorize(credentials) {
-        const jar = cookies()
-        const expected = jar.get('mewe_oauth_state')?.value
+        if (!credentials?.loginRequestToken) return null
 
-        // Reject if cookie missing, state missing, or mismatch (timing-safe)
+        // Nonce cookie format: "<state>:<appType>" — set server-side, never trusted from client
+        const jar = cookies()
+        const nonce = jar.get('mewe_auth_nonce')?.value
+        if (!nonce) return null
+
+        const colonIdx = nonce.lastIndexOf(':')
+        if (colonIdx === -1) return null
+        const expected = nonce.slice(0, colonIdx)
+        const appType  = nonce.slice(colonIdx + 1) // 'standalone' | 'embedded'
+
+        if (appType !== 'standalone' && appType !== 'embedded') return null
+
+        // Validate state (both flows — embedded nonce also requires matching)
         if (
-          !expected ||
-          !credentials?.state ||
+          !credentials.state ||
           expected.length !== credentials.state.length ||
           !timingSafeEqual(Buffer.from(expected), Buffer.from(credentials.state))
         ) return null
 
-        jar.delete('mewe_oauth_state')
+        jar.delete('mewe_auth_nonce')
 
-        if (!credentials.loginRequestToken) return null
+        const appId  = appType === 'embedded' ? process.env.MEWE_EMBEDDED_APP_ID!  : process.env.MEWE_APP_ID!
+        const apiKey = appType === 'embedded' ? process.env.MEWE_EMBEDDED_API_KEY! : process.env.MEWE_API_KEY!
 
         const tokenRes = await fetch(
           `https://mewe.com/api/dev/token?loginRequestToken=${credentials.loginRequestToken}`,
-          { method: 'GET', headers: { 'X-App-Id': process.env.MEWE_APP_ID!, 'X-Api-Key': process.env.MEWE_API_KEY! } }
+          { method: 'GET', headers: { 'X-App-Id': appId, 'X-Api-Key': apiKey } }
         )
         const tokenBody = await tokenRes.text()
         console.log('[mewe] token exchange status:', tokenRes.status, tokenBody)
@@ -45,14 +56,13 @@ export const authOptions: NextAuthOptions = {
         const profileRes = await fetch('https://mewe.com/api/dev/me', {
           headers: {
             Authorization: `Bearer ${apiToken}`,
-            'X-App-Id': process.env.MEWE_APP_ID!,
+            'X-App-Id': appId,
           },
         })
         const profileBody = await profileRes.text()
         console.log('[mewe] profile status:', profileRes.status, profileBody)
         if (!profileRes.ok) return null
         const profile = JSON.parse(profileBody)
-        // profile: { userId, name, firstName, lastName, handle, ... }
 
         const user = await prisma.user.upsert({
           where:  { meweId: profile.userId },
@@ -78,10 +88,10 @@ export const authOptions: NextAuthOptions = {
         return { ...token, ...session }
       }
       if (user) {
-        token.id             = user.id
-        token.username       = user.username
-        token.level          = user.level
-        token.xp             = user.xp
+        token.id              = user.id
+        token.username        = user.username
+        token.level           = user.level
+        token.xp              = user.xp
         token.hasSeenTutorial = user.hasSeenTutorial
       }
       return token
