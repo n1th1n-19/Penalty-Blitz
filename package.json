@@ -17,6 +17,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@types/yuka": "^0.7.4",
+    "@vercel/analytics": "^2.0.1",
     "bad-words": "^4.0.0",
     "bcryptjs": "^3.0.3",
     "driver.js": "^1.4.0",
